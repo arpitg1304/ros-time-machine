@@ -41,12 +41,12 @@ flowchart LR
     subgraph CircularBuffer["🔄 Circular Buffer (Always Running)"]
         direction TB
         B1["t-5s"] --> B2["t-4s"] --> B3["t-3s"] --> B4["t-2s"] --> B5["t-1s"] --> B6["t=0"]
-        style B1 fill:#ffcccc
-        style B2 fill:#ffdddd
-        style B3 fill:#ffeeee
-        style B4 fill:#fff5f5
-        style B5 fill:#fffafa
-        style B6 fill:#ffffff
+        style B1 fill:#c0392b,color:#fff,stroke:#922b21,stroke-width:2px
+        style B2 fill:#e74c3c,color:#fff,stroke:#c0392b,stroke-width:2px
+        style B3 fill:#f39c12,color:#fff,stroke:#d68910,stroke-width:2px
+        style B4 fill:#f1c40f,color:#000,stroke:#d4ac0d,stroke-width:2px
+        style B5 fill:#2ecc71,color:#fff,stroke:#27ae60,stroke-width:2px
+        style B6 fill:#27ae60,color:#fff,stroke:#1e8449,stroke-width:2px
     end
 
     subgraph Trigger["⚡ Trigger"]
@@ -72,8 +72,12 @@ flowchart LR
     Trigger --> Recording
     Recording --> Output
 
-    style T fill:#ff6b6b,color:#fff
-    style R3 fill:#51cf66,color:#fff
+    style T fill:#e74c3c,color:#fff,stroke:#c0392b,stroke-width:3px
+    style R1 fill:#3498db,color:#fff,stroke:#2980b9,stroke-width:2px
+    style R2 fill:#9b59b6,color:#fff,stroke:#8e44ad,stroke-width:2px
+    style R3 fill:#27ae60,color:#fff,stroke:#1e8449,stroke-width:2px
+    style O1 fill:#e67e22,color:#fff,stroke:#d35400,stroke-width:2px
+    style O2 fill:#16a085,color:#fff,stroke:#138d75,stroke-width:2px
 ```
 
 **Key Concept:** The circular buffer continuously stores the last N seconds of data. When triggered, only the relevant portion is extracted and combined with live post-event recording.
