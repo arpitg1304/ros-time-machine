@@ -15,6 +15,69 @@ Capture the moments that matter by recording data *before* and *after* specific 
 - **Multi-threaded**: Handle multiple simultaneous recordings efficiently
 - **REST API Bridge**: Optional HTTP API for triggering snapshots from web apps, mobile devices, or non-ROS systems
 
+## How It Works
+
+The Time Machine continuously buffers incoming messages in memory. When a trigger event occurs, it combines buffered pre-event data with live post-event recording to create a complete snapshot.
+
+```mermaid
+gantt
+    title Recording Timeline
+    dateFormat X
+    axisFormat %s
+
+    section Circular Buffer
+    Continuous buffering (oldest dropped) :active, buffer, 0, 10
+
+    section Trigger Event
+    ⚡ Event detected at t=5s            :milestone, trigger, 5, 0
+
+    section Rosbag Output
+    Pre-event (from buffer)              :pre, 2, 5
+    Post-event (live recording)          :post, 5, 8
+```
+
+```mermaid
+flowchart LR
+    subgraph CircularBuffer["🔄 Circular Buffer (Always Running)"]
+        direction TB
+        B1["t-5s"] --> B2["t-4s"] --> B3["t-3s"] --> B4["t-2s"] --> B5["t-1s"] --> B6["t=0"]
+        style B1 fill:#ffcccc
+        style B2 fill:#ffdddd
+        style B3 fill:#ffeeee
+        style B4 fill:#fff5f5
+        style B5 fill:#fffafa
+        style B6 fill:#ffffff
+    end
+
+    subgraph Trigger["⚡ Trigger"]
+        T["Event Detected!"]
+    end
+
+    subgraph Recording["📹 Recording Process"]
+        direction TB
+        R1["1. Dump buffer<br/>(pre-event data)"]
+        R2["2. Record live<br/>(post-event data)"]
+        R3["3. Save rosbag"]
+        R1 --> R2 --> R3
+    end
+
+    subgraph Output["💾 Output Rosbag"]
+        direction LR
+        O1["Pre-event<br/>messages<br/>(t-3s to t=0)"]
+        O2["Post-event<br/>messages<br/>(t=0 to t+5s)"]
+        O1 --- O2
+    end
+
+    CircularBuffer --> Trigger
+    Trigger --> Recording
+    Recording --> Output
+
+    style T fill:#ff6b6b,color:#fff
+    style R3 fill:#51cf66,color:#fff
+```
+
+**Key Concept:** The circular buffer continuously stores the last N seconds of data. When triggered, only the relevant portion is extracted and combined with live post-event recording.
+
 ## Use Cases
 
 - **Collision Detection**: Capture sensor data from 5 seconds before impact to 10 seconds after
