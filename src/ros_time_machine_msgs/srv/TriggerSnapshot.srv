@@ -1,0 +1,9 @@
+# Service to manually trigger a snapshot recording
+
+# Request
+string snapshot_name  # Name of the snapshot to trigger (must match config)
+---
+# Response
+bool success          # True if trigger was successful
+string message        # Status message or error description
+string output_path    # Path where recording will be saved (if successful)

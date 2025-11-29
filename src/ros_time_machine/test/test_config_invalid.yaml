@@ -1,0 +1,7 @@
+# Invalid config - missing required fields
+snapshots:
+  - name: "incomplete_snapshot"
+    # Missing trigger section
+    recording:
+      topics:
+        - "/test/topic"

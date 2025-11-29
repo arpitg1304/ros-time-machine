@@ -1,0 +1,16 @@
+# Service to list all configured snapshots
+
+# Request
+# (empty - returns all snapshots)
+---
+# Response
+bool success
+
+# List of snapshot names
+string[] snapshot_names
+
+# Brief description for each snapshot
+string[] descriptions
+
+# Additional message
+string message

@@ -1,0 +1,22 @@
+# Service to get current system status
+
+# Request
+# (empty - returns status of all snapshots)
+---
+# Response
+bool success
+
+# List of active recordings
+string[] active_recordings
+
+# Total buffer memory usage (bytes)
+uint64 total_buffer_memory
+
+# Number of configured snapshots
+uint32 num_snapshots
+
+# System uptime (seconds)
+float64 uptime_seconds
+
+# Additional status message
+string message

@@ -1,0 +1,54 @@
+# ROS2 build artifacts
+build/
+install/
+log/
+
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rosbag files (might be large)
+*.db3
+*.db3-shm
+*.db3-wal
+*.mcap
+
+# Test output
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Custom
+*.log
+*.tmp
+
+# Datasets and test data (not for public repo)
+datasets/
+docs/internal/
+
+# Development plans and internal documentation (not for public release)
+PROJECT_PLAN.md
+PACKAGE_IMPROVEMENTS.md
+event_recorder/
+MIDDLEWARE_AGNOSTIC_PLAN.md
+
+# Temporary files
+/tmp/

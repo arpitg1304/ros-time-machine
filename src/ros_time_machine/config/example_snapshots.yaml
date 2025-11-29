@@ -1,0 +1,101 @@
+# ROS Time Machine - Example Snapshot Configuration
+
+snapshots:
+  # Example 1: Emergency stop event
+  - name: "emergency_stop"
+    description: "Record when emergency stop is triggered"
+
+    trigger:
+      topic: "/emergency_stop"
+      msg_type: "std_msgs/msg/Bool"
+      condition:
+        field: "data"
+        operator: "=="
+        value: true
+
+    recording:
+      topics:
+        - "/camera/image_raw"
+        - "/lidar/points"
+        - "/odom"
+        - "/cmd_vel"
+      pre_event_duration: 5.0   # seconds before trigger
+      post_event_duration: 10.0  # seconds after trigger
+      max_buffer_size: 500       # MB per topic
+
+    rate_limit:
+      max_triggers_per_minute: 3
+
+    output:
+      path: "/tmp/ros_time_machine/snapshots"
+      name_pattern: "{snapshot_name}_{timestamp}"
+      format: "mcap"  # or "sqlite3"
+
+  # Example 2: High acceleration event
+  - name: "high_acceleration"
+    description: "Record when robot experiences high acceleration"
+
+    trigger:
+      topic: "/imu/data"
+      msg_type: "sensor_msgs/msg/Imu"
+      condition:
+        field: "linear_acceleration.x"
+        operator: ">"
+        value: 5.0
+
+    recording:
+      topics:
+        - "/camera/image_raw"
+        - "/imu/data"
+        - "/odom"
+      pre_event_duration: 3.0
+      post_event_duration: 5.0
+      max_buffer_size: 300
+
+    rate_limit:
+      max_triggers_per_minute: 10
+
+    output:
+      path: "/tmp/ros_time_machine/snapshots"
+      name_pattern: "{snapshot_name}_{timestamp}"
+
+  # Example 3: Manual trigger (always listening)
+  - name: "manual_capture"
+    description: "Manually triggered snapshot via topic"
+
+    trigger:
+      topic: "/time_machine/manual_trigger"
+      msg_type: "std_msgs/msg/Bool"
+      condition:
+        field: "data"
+        operator: "=="
+        value: true
+
+    recording:
+      topics:
+        - "/cmd_vel"
+      pre_event_duration: 2.0
+      post_event_duration: 3.0
+      max_buffer_size: 200
+
+    rate_limit:
+      max_triggers_per_minute: 60  # Allow frequent manual triggers
+
+    output:
+      path: "/tmp/ros_time_machine/snapshots"
+      name_pattern: "manual_{timestamp}"
+
+# Global settings
+global:
+  # Maximum total memory for all buffers (MB)
+  max_total_buffer_memory: 2000
+
+  # Number of recording worker threads
+  recording_threads: 4
+
+  # Log level (DEBUG, INFO, WARN, ERROR)
+  log_level: "INFO"
+
+  # Enable statistics publishing
+  publish_stats: true
+  stats_publish_rate: 1.0  # Hz

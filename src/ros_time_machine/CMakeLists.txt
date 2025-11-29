@@ -1,0 +1,187 @@
+cmake_minimum_required(VERSION 3.8)
+project(ros_time_machine)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rosbag2_cpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
+
+# Config Manager library
+add_library(config_manager
+  src/config_manager.cpp
+)
+
+target_include_directories(config_manager PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+
+target_compile_features(config_manager PUBLIC cxx_std_17)
+
+target_link_libraries(config_manager
+  yaml-cpp
+)
+
+ament_target_dependencies(config_manager
+  rclcpp
+)
+
+# Buffer Manager library
+add_library(buffer_manager
+  src/buffer_manager.cpp
+)
+
+target_include_directories(buffer_manager PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+
+target_compile_features(buffer_manager PUBLIC cxx_std_17)
+
+ament_target_dependencies(buffer_manager
+  rclcpp
+  rosbag2_cpp
+)
+
+# Trigger Monitor library
+add_library(trigger_monitor
+  src/trigger_monitor.cpp
+)
+
+target_include_directories(trigger_monitor PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+
+target_compile_features(trigger_monitor PUBLIC cxx_std_17)
+
+ament_target_dependencies(trigger_monitor
+  rclcpp
+  std_msgs
+  sensor_msgs
+)
+
+# Recorder library
+add_library(recorder
+  src/recorder.cpp
+)
+
+target_include_directories(recorder PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+
+target_compile_features(recorder PUBLIC cxx_std_17)
+
+ament_target_dependencies(recorder
+  rclcpp
+  rosbag2_cpp
+)
+
+# Main executable
+add_executable(time_machine_node src/time_machine_node.cpp)
+
+target_include_directories(time_machine_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+
+target_compile_features(time_machine_node PUBLIC c_std_99 cxx_std_17)
+
+target_link_libraries(time_machine_node
+  config_manager
+  buffer_manager
+  trigger_monitor
+  recorder
+)
+
+ament_target_dependencies(time_machine_node
+  rclcpp
+  rosbag2_cpp
+  std_msgs
+  sensor_msgs
+)
+
+# Install targets
+install(TARGETS
+  time_machine_node
+  config_manager
+  buffer_manager
+  trigger_monitor
+  recorder
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install header files
+install(DIRECTORY include/
+  DESTINATION include/${PROJECT_NAME}
+)
+
+# Install launch files
+install(DIRECTORY launch/
+  DESTINATION share/${PROJECT_NAME}/launch
+)
+
+# Install config files
+install(DIRECTORY config/
+  DESTINATION share/${PROJECT_NAME}/config
+)
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(launch_testing_ament_cmake REQUIRED)
+
+  # the following line skips the linter which checks for copyrights
+  # comment the line when a copyright and license is added to all source files
+  set(ament_cmake_copyright_FOUND TRUE)
+  # the following line skips cpplint (only works in a git repo)
+  # comment the line when this package is in a git repo and when
+  # a copyright and license is added to all source files
+  set(ament_cmake_cpplint_FOUND TRUE)
+  ament_lint_auto_find_test_dependencies()
+
+  # Unit tests - CircularBuffer
+  ament_add_gtest(test_circular_buffer test/test_circular_buffer.cpp)
+  target_include_directories(test_circular_buffer PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+  )
+  target_compile_features(test_circular_buffer PUBLIC cxx_std_17)
+
+  # Unit tests - ConfigManager
+  ament_add_gtest(test_config_manager test/test_config_manager.cpp)
+  target_link_libraries(test_config_manager config_manager)
+  target_include_directories(test_config_manager PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+  )
+  target_compile_features(test_config_manager PUBLIC cxx_std_17)
+  ament_target_dependencies(test_config_manager
+    rclcpp
+  )
+
+  # Install test config files
+  install(
+    FILES
+      test/test_config.yaml
+      test/test_config_invalid.yaml
+    DESTINATION share/${PROJECT_NAME}/test
+  )
+
+  # Integration test using launch_testing
+  add_launch_test(
+    test/test_integration.py
+    TARGET test_integration
+    TIMEOUT 30
+  )
+endif()
+
+ament_package()
