@@ -407,6 +407,16 @@ A test script is provided to verify the REST API functionality:
 bash test_rest_api.sh
 ```
 
+## Testing with Public Datasets
+
+Want to try ROS Time Machine with real sensor data? See our guide on testing with publicly available datasets including:
+
+- **NVIDIA Isaac R2B** - Multi-sensor dataset with cameras, LiDAR, and IMU (15.5 GB)
+- **AutoCore Ouster OS1-64** - High-quality LiDAR point clouds
+- **Intel RealSense D435** - RGB-D camera data
+
+See [docs/TESTING_WITH_DATASETS.md](docs/TESTING_WITH_DATASETS.md) for download links, sample configs, and step-by-step instructions.
+
 ## Advanced Usage
 
 ### Launch File Parameters
