@@ -35,7 +35,7 @@ Capture the moments that matter by recording data *before* and *after* specific 
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ros_time_machine.git
+git clone https://github.com/arpitg1304/ros_time_machine.git
 cd ros_time_machine
 
 # Build the package
@@ -414,7 +414,7 @@ ros2 run ros_time_machine time_machine_node \
 └─────────────────┘
 ```
 
-For detailed architecture diagrams, component specifications, and implementation notes, see [PROJECT_PLAN.md](PROJECT_PLAN.md).
+For detailed architecture diagrams and component specifications, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## License
 
@@ -426,5 +426,5 @@ Contributions welcome! Please open an issue or pull request.
 
 ## Support
 
-- **Issues**: https://github.com/yourusername/ros_time_machine/issues
-- **Discussions**: https://github.com/yourusername/ros_time_machine/discussions
+- **Issues**: https://github.com/arpitg1304/ros_time_machine/issues
+- **Discussions**: https://github.com/arpitg1304/ros_time_machine/discussions
