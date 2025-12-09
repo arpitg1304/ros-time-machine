@@ -40,15 +40,5 @@ htmlcov/
 *.log
 *.tmp
 
-# Datasets and test data (not for public repo)
-datasets/
-docs/internal/
-
-# Development plans and internal documentation (not for public release)
-PROJECT_PLAN.md
-PACKAGE_IMPROVEMENTS.md
-event_recorder/
-MIDDLEWARE_AGNOSTIC_PLAN.md
-
 # Temporary files
 /tmp/
