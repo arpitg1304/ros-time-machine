@@ -1,0 +1,136 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="abg" x1="0" y1="0" x2="0" y2="640" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#101a2c"/>
+    </linearGradient>
+    <marker id="ar" markerWidth="11" markerHeight="11" refX="6.5" refY="3.2" orient="auto">
+      <path d="M0,0 L7,3.2 L0,6.4 Z" fill="#7c89a3"/>
+    </marker>
+    <marker id="arR" markerWidth="11" markerHeight="11" refX="6.5" refY="3.2" orient="auto">
+      <path d="M0,0 L7,3.2 L0,6.4 Z" fill="#fb7185"/>
+    </marker>
+    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" rx="20" fill="url(#abg)"/>
+  <rect x="1" y="1" width="1278" height="638" rx="19" fill="none" stroke="#243049" stroke-width="1.5"/>
+  <text x="64" y="58" font-size="30" font-weight="800" fill="#e2e8f0">Architecture</text>
+  <text x="64" y="88" font-size="16" fill="#94a3b8">A single ROS&#160;2 node, four cooperating components, driven by one YAML config.</text>
+
+  <!-- CONFIG MANAGER (top spanning bar) -->
+  <g filter="url(#cardShadow)">
+    <rect x="360" y="116" width="856" height="58" rx="12" fill="#1d1908" stroke="#f59e0b" stroke-width="1.5"/>
+  </g>
+  <rect x="360" y="116" width="6" height="58" rx="3" fill="#f59e0b"/>
+  <text x="386" y="142" font-size="17" font-weight="700" fill="#fbbf24">⚙ Config Manager</text>
+  <text x="386" y="162" font-size="13" fill="#cbd5e1">Loads &amp; validates YAML — defines snapshots, triggers, topics, durations, output</text>
+  <text x="1196" y="150" font-size="13" fill="#92732a" text-anchor="end">snapshots.yaml</text>
+
+  <!-- ROS TOPICS (left) -->
+  <g filter="url(#cardShadow)">
+    <rect x="64" y="250" width="232" height="240" rx="14" fill="#16203a" stroke="#3b4a6b" stroke-width="1.5"/>
+  </g>
+  <text x="180" y="284" font-size="17" font-weight="700" fill="#cbd5e1" text-anchor="middle">📡 ROS&#160;2 Topics</text>
+  <g font-size="13" fill="#93a4c4" text-anchor="middle">
+    <rect x="92" y="306" width="176" height="34" rx="8" fill="#0e1626" stroke="#2d3a52"/>
+    <text x="180" y="328">/camera/image_raw</text>
+    <rect x="92" y="350" width="176" height="34" rx="8" fill="#0e1626" stroke="#2d3a52"/>
+    <text x="180" y="372">/lidar/points</text>
+    <rect x="92" y="394" width="176" height="34" rx="8" fill="#0e1626" stroke="#2d3a52"/>
+    <text x="180" y="416">/imu/data&#160;&#160;·&#160;&#160;/odom</text>
+    <rect x="92" y="438" width="176" height="34" rx="8" fill="#0e1626" stroke="#2d3a52"/>
+    <text x="180" y="460">/emergency_stop</text>
+  </g>
+
+  <!-- BUFFER MANAGER -->
+  <g filter="url(#cardShadow)">
+    <rect x="372" y="226" width="288" height="118" rx="14" fill="#06212f" stroke="#0ea5e9" stroke-width="1.5"/>
+  </g>
+  <rect x="372" y="226" width="6" height="118" rx="3" fill="#0ea5e9"/>
+  <text x="398" y="256" font-size="17" font-weight="700" fill="#7dd3fc">🔄 Buffer Manager</text>
+  <text x="398" y="282" font-size="13" fill="#cbd5e1">Thread-safe circular buffer per topic</text>
+  <text x="398" y="304" font-size="13" fill="#cbd5e1">Dynamic discovery · serialized msgs</text>
+  <text x="398" y="326" font-size="13" fill="#cbd5e1">Holds the last N seconds in RAM</text>
+
+  <!-- TRIGGER MONITOR -->
+  <g filter="url(#cardShadow)">
+    <rect x="372" y="372" width="288" height="118" rx="14" fill="#1a1330" stroke="#a78bfa" stroke-width="1.5"/>
+  </g>
+  <rect x="372" y="372" width="6" height="118" rx="3" fill="#a78bfa"/>
+  <text x="398" y="402" font-size="17" font-weight="700" fill="#c4b5fd">⚡ Trigger Monitor</text>
+  <text x="398" y="428" font-size="13" fill="#cbd5e1">Evaluates conditions (==, &gt;, &lt;, …)</text>
+  <text x="398" y="450" font-size="13" fill="#cbd5e1">Nested fields · rate limiting</text>
+  <text x="398" y="472" font-size="13" fill="#cbd5e1">Fires the recorder on match</text>
+
+  <!-- RECORDER -->
+  <g filter="url(#cardShadow)">
+    <rect x="724" y="298" width="252" height="166" rx="14" fill="#062417" stroke="#10b981" stroke-width="1.5"/>
+  </g>
+  <rect x="724" y="298" width="6" height="166" rx="3" fill="#10b981"/>
+  <text x="750" y="330" font-size="17" font-weight="700" fill="#6ee7b7">📹 Recorder</text>
+  <text x="750" y="358" font-size="13" fill="#cbd5e1">Worker thread pool</text>
+  <text x="750" y="380" font-size="13" fill="#cbd5e1">1 · dump pre-event buffer</text>
+  <text x="750" y="402" font-size="13" fill="#cbd5e1">2 · record live post-event</text>
+  <text x="750" y="424" font-size="13" fill="#cbd5e1">3 · write MCAP rosbag</text>
+  <text x="750" y="448" font-size="13" fill="#94a3b8">concurrent recordings supported</text>
+
+  <!-- OUTPUT -->
+  <g filter="url(#cardShadow)">
+    <rect x="1040" y="298" width="176" height="166" rx="14" fill="#0e1626" stroke="#34d399" stroke-width="1.5"/>
+  </g>
+  <text x="1128" y="332" font-size="17" font-weight="700" fill="#6ee7b7" text-anchor="middle">💾 Snapshots</text>
+  <g text-anchor="middle">
+    <rect x="1062" y="352" width="132" height="40" rx="8" fill="#062417" stroke="#10b981" stroke-opacity="0.5"/>
+    <text x="1128" y="370" font-size="12" fill="#a7f3d0">collision_…mcap</text>
+    <text x="1128" y="385" font-size="10" fill="#5b7a6a">pre + post</text>
+    <rect x="1062" y="400" width="132" height="40" rx="8" fill="#062417" stroke="#10b981" stroke-opacity="0.5"/>
+    <text x="1128" y="418" font-size="12" fill="#a7f3d0">estop_…mcap</text>
+    <text x="1128" y="433" font-size="10" fill="#5b7a6a">pre + post</text>
+  </g>
+
+  <!-- REST BRIDGE (optional input) -->
+  <g filter="url(#cardShadow)">
+    <rect x="64" y="540" width="296" height="64" rx="12" fill="#2a0f1b" stroke="#fb7185" stroke-width="1.5"/>
+  </g>
+  <text x="86" y="568" font-size="15" font-weight="700" fill="#fda4af">🌐 REST API Bridge <tspan fill="#9f5560" font-weight="400">(optional)</tspan></text>
+  <text x="86" y="590" font-size="12.5" fill="#cbd5e1">HTTP / manual triggers from web, mobile, non-ROS</text>
+
+  <!-- ============ CONNECTIONS ============ -->
+  <!-- config dashed down to components -->
+  <g stroke="#f59e0b" stroke-width="1.3" stroke-dasharray="4 5" opacity="0.6" fill="none">
+    <path d="M 470 174 L 470 220"/>
+    <path d="M 560 174 L 520 366"/>
+    <path d="M 800 174 L 820 292"/>
+  </g>
+
+  <!-- topics -> buffer & trigger -->
+  <g stroke="#7c89a3" stroke-width="1.8" marker-end="url(#ar)" fill="none">
+    <path d="M 296 320 C 330 300, 340 290, 366 285"/>
+    <path d="M 296 420 C 330 440, 340 430, 366 431"/>
+  </g>
+
+  <!-- buffer -> recorder (provides pre data) -->
+  <g stroke="#7c89a3" stroke-width="1.8" marker-end="url(#ar)" fill="none">
+    <path d="M 660 300 C 690 320, 700 350, 718 360"/>
+  </g>
+  <text x="664" y="316" font-size="11.5" fill="#7dd3fc" font-style="italic">pre-event data</text>
+
+  <!-- trigger -> recorder (fire) -->
+  <g stroke="#fb7185" stroke-width="2" marker-end="url(#arR)" fill="none">
+    <path d="M 660 420 C 690 410, 700 405, 718 402"/>
+  </g>
+  <text x="666" y="395" font-size="11.5" fill="#fda4af" font-style="italic">fire!</text>
+
+  <!-- recorder -> output -->
+  <g stroke="#7c89a3" stroke-width="1.8" marker-end="url(#ar)" fill="none">
+    <path d="M 976 381 L 1034 381"/>
+  </g>
+
+  <!-- rest -> trigger monitor -->
+  <g stroke="#fb7185" stroke-width="1.8" marker-end="url(#arR)" fill="none" opacity="0.85">
+    <path d="M 360 560 C 470 560, 430 500, 430 494"/>
+  </g>
+</svg>

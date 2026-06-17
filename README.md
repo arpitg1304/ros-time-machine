@@ -1,259 +1,140 @@
-# ROS Time Machine
+<p align="center">
+  <img src="docs/images/banner.svg" alt="ROS Time Machine" width="100%">
+</p>
 
-**Event-triggered recording system for ROS 2 that captures sensor data snapshots with pre-event buffering.**
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-3b82f6.svg" alt="License: Apache 2.0"></a>
+  <img src="https://img.shields.io/badge/ROS_2-Jazzy-22a7f0.svg" alt="ROS 2 Jazzy">
+  <img src="https://img.shields.io/badge/C%2B%2B-17-a78bfa.svg" alt="C++17">
+  <img src="https://img.shields.io/badge/storage-MCAP-10b981.svg" alt="MCAP">
+  <img src="https://img.shields.io/badge/REST_API-optional-fb7185.svg" alt="REST API">
+</p>
 
-Capture the moments that matter by recording data *before* and *after* specific events occur. Perfect for debugging, data collection, and critical event analysis in robotics applications.
+<p align="center">
+  <b>A dashcam for your robot.</b> Continuously buffer recent sensor data, and when something
+  important happens, automatically save a rosbag with the moments <i>before</i> and <i>after</i> the event.
+</p>
+
+---
+
+## Why?
+
+When a robot does something unexpected — a collision, an emergency stop, a weird sensor reading — the
+data you *really* want is the few seconds **leading up to it**. But you can't record everything forever.
+
+ROS Time Machine keeps a rolling, in-memory buffer of the last *N* seconds for each topic. The instant a
+trigger fires, it stitches that **pre-event** buffer together with **live post-event** recording into a
+single MCAP rosbag — capturing the full story of the moment, automatically.
+
+## How it works
+
+<p align="center">
+  <img src="docs/images/how-it-works.svg" alt="How ROS Time Machine works: pre-event buffer + trigger + post-event recording" width="100%">
+</p>
+
+> **Key idea:** one circular buffer per topic is *always* recording. On a trigger, only the relevant
+> slice is extracted and combined with live recording — so you pay memory cost, not disk cost, until it matters.
 
 ## Features
 
-- **Pre-Event Buffering**: Circular buffers continuously store recent data, capturing what happened *before* a trigger
-- **Post-Event Recording**: Continue recording for a specified duration after the trigger
-- **Dynamic Topic Discovery**: Automatically detects and subscribes to topics as they become available
-- **Flexible Triggers**: Monitor any ROS topic and trigger on custom conditions
-- **Rate Limiting**: Prevent excessive recordings with configurable trigger limits
-- **MCAP Format**: Modern, efficient rosbag2 storage with compression support
-- **Multi-threaded**: Handle multiple simultaneous recordings efficiently
-- **REST API Bridge**: Optional HTTP API for triggering snapshots from web apps, mobile devices, or non-ROS systems
+| | |
+|---|---|
+| ⏪ **Pre-event buffering** | Circular buffers continuously hold recent data — capture what happened *before* the trigger |
+| ⏺️ **Post-event recording** | Keep recording for a configurable duration *after* the trigger |
+| ⚡ **Flexible triggers** | Watch any topic; fire on conditions (`==`, `!=`, `>`, `<`, `>=`, `<=`) over nested message fields |
+| 🔍 **Dynamic topic discovery** | Auto-detects and subscribes to topics as they appear — no message-type codegen needed |
+| 🚦 **Rate limiting** | Cap recordings per minute/second to avoid runaway disk usage |
+| 💾 **MCAP format** | Modern, efficient rosbag2 storage with compression |
+| 🧵 **Multi-threaded** | Worker pool handles multiple simultaneous recordings |
+| 🌐 **REST API (optional)** | Trigger & list snapshots over HTTP from web apps, mobile, or non-ROS systems |
 
-## How It Works
+## Quick start
 
-The Time Machine continuously buffers incoming messages in memory. When a trigger event occurs, it combines buffered pre-event data with live post-event recording to create a complete snapshot.
-
-```mermaid
-gantt
-    title Recording Timeline
-    dateFormat X
-    axisFormat %s
-
-    section Circular Buffer
-    Continuous buffering (oldest dropped) :active, buffer, 0, 10
-
-    section Trigger Event
-    ⚡ Event detected at t=5s            :milestone, trigger, 5, 0
-
-    section Rosbag Output
-    Pre-event (from buffer)              :pre, 2, 5
-    Post-event (live recording)          :post, 5, 8
-```
-
-```mermaid
-flowchart LR
-    subgraph CircularBuffer["🔄 Circular Buffer (Always Running)"]
-        direction TB
-        B1["t-5s"] --> B2["t-4s"] --> B3["t-3s"] --> B4["t-2s"] --> B5["t-1s"] --> B6["t=0"]
-        style B1 fill:#c0392b,color:#fff,stroke:#922b21,stroke-width:2px
-        style B2 fill:#e74c3c,color:#fff,stroke:#c0392b,stroke-width:2px
-        style B3 fill:#f39c12,color:#fff,stroke:#d68910,stroke-width:2px
-        style B4 fill:#f1c40f,color:#000,stroke:#d4ac0d,stroke-width:2px
-        style B5 fill:#2ecc71,color:#fff,stroke:#27ae60,stroke-width:2px
-        style B6 fill:#27ae60,color:#fff,stroke:#1e8449,stroke-width:2px
-    end
-
-    subgraph Trigger["⚡ Trigger"]
-        T["Event Detected!"]
-    end
-
-    subgraph Recording["📹 Recording Process"]
-        direction TB
-        R1["1. Dump buffer<br/>(pre-event data)"]
-        R2["2. Record live<br/>(post-event data)"]
-        R3["3. Save rosbag"]
-        R1 --> R2 --> R3
-    end
-
-    subgraph Output["💾 Output Rosbag"]
-        direction LR
-        O1["Pre-event<br/>messages<br/>(t-3s to t=0)"]
-        O2["Post-event<br/>messages<br/>(t=0 to t+5s)"]
-        O1 --- O2
-    end
-
-    CircularBuffer --> Trigger
-    Trigger --> Recording
-    Recording --> Output
-
-    style T fill:#e74c3c,color:#fff,stroke:#c0392b,stroke-width:3px
-    style R1 fill:#3498db,color:#fff,stroke:#2980b9,stroke-width:2px
-    style R2 fill:#9b59b6,color:#fff,stroke:#8e44ad,stroke-width:2px
-    style R3 fill:#27ae60,color:#fff,stroke:#1e8449,stroke-width:2px
-    style O1 fill:#e67e22,color:#fff,stroke:#d35400,stroke-width:2px
-    style O2 fill:#16a085,color:#fff,stroke:#138d75,stroke-width:2px
-```
-
-**Key Concept:** The circular buffer continuously stores the last N seconds of data. When triggered, only the relevant portion is extracted and combined with live post-event recording.
-
-## Use Cases
-
-- **Collision Detection**: Capture sensor data from 5 seconds before impact to 10 seconds after
-- **Anomaly Detection**: Record when unusual sensor readings occur
-- **Manual Capture**: Trigger recordings on demand via topic or REST API
-- **Emergency Events**: Automatically save data when safety systems activate
-- **Remote Monitoring**: Trigger snapshots from a web dashboard or mobile app using the REST API
-
-## Quick Start
-
-### Prerequisites
-
-- **ROS 2 Jazzy** (Ubuntu 24.04)
-- **C++17** compatible compiler
-- **rosbag2** with MCAP support
-
-### Installation
+> **Prerequisites:** ROS 2 Jazzy (Ubuntu 24.04) · a C++17 compiler · rosbag2 with MCAP support
 
 ```bash
-# Clone the repository
-git clone https://github.com/arpitg1304/ros_time_machine.git
-cd ros_time_machine
-
-# Build the package
+# 1. Clone & build
+git clone https://github.com/arpitg1304/ros-time-machine.git
+cd ros-time-machine
 colcon build --packages-select ros_time_machine
-
-# Source the workspace
 source install/setup.bash
-```
 
-### Basic Usage
-
-1. **Create a configuration file** (or use the example):
-
-```bash
-# Copy the example config
-cp src/ros_time_machine/config/example_snapshots.yaml my_config.yaml
-
-# Edit to match your topics and trigger conditions
-nano my_config.yaml
-```
-
-2. **Launch the Time Machine node**:
-
-```bash
-# With default config
+# 2. Launch (uses the bundled example config)
 ros2 launch ros_time_machine time_machine.launch.py
 
-# With custom config
-ros2 launch ros_time_machine time_machine.launch.py \
-  config_file:=/path/to/my_config.yaml
-
-# With debug logging
-ros2 launch ros_time_machine time_machine.launch.py \
-  config_file:=/path/to/my_config.yaml \
-  log_level:=debug
-```
-
-3. **Trigger a recording**:
-
-```bash
-# Manual trigger (requires manual_capture snapshot in config)
+# 3. Trigger a snapshot
 ros2 topic pub -1 /time_machine/manual_trigger std_msgs/msg/Bool "{data: true}"
 
-# Or let automatic triggers activate based on your conditions
+# 4. Find your recording
+ls /tmp/ros_time_machine/snapshots/
 ```
 
-4. **Find your recordings**:
+To use your own setup, copy and edit the example config:
 
 ```bash
-# Default location
-ls /tmp/ros_time_machine/snapshots/
-
-# Or your configured output path
+cp src/ros_time_machine/config/example_snapshots.yaml my_config.yaml
+ros2 launch ros_time_machine time_machine.launch.py config_file:=/path/to/my_config.yaml
 ```
 
-## Configuration Guide
+## Configuration
 
-The Time Machine uses YAML configuration files to define snapshots, triggers, and recording parameters.
-
-### Basic Configuration Structure
+A snapshot ties together a **trigger**, the **topics** to record, and how much to keep **before/after**:
 
 ```yaml
 snapshots:
-  - name: "my_snapshot"
-    description: "Description of what this captures"
-
+  - name: "emergency_stop"
     trigger:
-      topic: "/trigger/topic"
+      topic: "/emergency_stop"
       msg_type: "std_msgs/msg/Bool"
-      condition:
-        field: "data"
-        operator: "=="
-        value: true
-
+      condition: { field: "data", operator: "==", value: true }
     recording:
-      topics:
-        - "/camera/image_raw"
-        - "/lidar/points"
-      pre_event_duration: 5.0   # seconds before trigger
-      post_event_duration: 10.0  # seconds after trigger
-
+      topics: ["/camera/image_raw", "/lidar/points", "/odom"]
+      pre_event_duration: 5.0     # seconds kept from the buffer (before)
+      post_event_duration: 10.0   # seconds recorded live (after)
     rate_limit:
       max_triggers_per_minute: 3
-
     output:
       path: "/tmp/ros_time_machine/snapshots"
       name_pattern: "{snapshot_name}_{timestamp}"
       format: "mcap"
 ```
 
-### Configuration Fields
+<details>
+<summary><b>📖 Full configuration reference</b></summary>
 
-#### Snapshot Definition
+#### Snapshot
+- **name** — unique identifier for this snapshot type
+- **description** — human-readable description (optional)
 
-- **name**: Unique identifier for this snapshot type
-- **description**: Human-readable description
+#### `trigger`
+- **topic** — ROS topic to monitor
+- **msg_type** — full message type, e.g. `std_msgs/msg/Bool`
+- **condition** *(optional)* — fire only when this is true
+  - **field** — field path in the message (e.g. `data`, `linear_acceleration.x`)
+  - **operator** — one of `==`, `!=`, `>`, `<`, `>=`, `<=`
+  - **value** — value to compare against
 
-#### Trigger Configuration
+#### `recording`
+- **topics** — list of topics to record
+- **pre_event_duration** — seconds of buffered data to capture *before* the trigger
+- **post_event_duration** — seconds to keep recording *after* the trigger
 
-- **topic**: ROS topic to monitor
-- **msg_type**: Full message type (e.g., "std_msgs/msg/Bool")
-- **condition**: (Optional) Condition to evaluate
-  - **field**: Field path in message (e.g., "data" or "linear_acceleration.x")
-  - **operator**: Comparison operator (`==`, `!=`, `>`, `<`, `>=`, `<=`)
-  - **value**: Value to compare against
+#### `rate_limit`
+- **max_triggers_per_minute** — max triggers allowed per minute
+- **max_triggers_per_second** — *(alternative)* max triggers per second
+- **window_size** — time window in seconds for rate limiting
 
-#### Recording Configuration
+#### `output`
+- **path** — directory to save recordings
+- **name_pattern** — filename pattern (supports `{snapshot_name}` and `{timestamp}`)
+- **format** — `mcap` (recommended) or `sqlite3`
 
-- **topics**: List of topics to record
-- **pre_event_duration**: Seconds of data to capture before trigger
-- **post_event_duration**: Seconds to continue recording after trigger
+</details>
 
-#### Rate Limiting
+<details>
+<summary><b>📋 More example snapshots</b> (high-acceleration detection, multi-camera)</summary>
 
-- **max_triggers_per_minute**: Maximum number of triggers allowed per minute
-- **max_triggers_per_second**: (Alternative) Maximum triggers per second
-- **window_size**: Time window in seconds for rate limiting
-
-#### Output Configuration
-
-- **path**: Directory to save recordings
-- **name_pattern**: Filename pattern (supports `{snapshot_name}` and `{timestamp}`)
-- **format**: Storage format ("mcap" recommended, or "sqlite3")
-
-### Example Configurations
-
-#### Manual Trigger
-
-```yaml
-snapshots:
-  - name: "manual_capture"
-    trigger:
-      topic: "/time_machine/manual_trigger"
-      msg_type: "std_msgs/msg/Bool"
-      condition:
-        field: "data"
-        operator: "=="
-        value: true
-
-    recording:
-      topics:
-        - "/camera/image"
-        - "/odom"
-      pre_event_duration: 2.0
-      post_event_duration: 3.0
-
-    output:
-      path: "/tmp/snapshots"
-```
-
-#### High Acceleration Detection
+**High-acceleration detection** — fire when IMU acceleration exceeds a threshold:
 
 ```yaml
 snapshots:
@@ -261,23 +142,16 @@ snapshots:
     trigger:
       topic: "/imu/data"
       msg_type: "sensor_msgs/msg/Imu"
-      condition:
-        field: "linear_acceleration.x"
-        operator: ">"
-        value: 5.0
-
+      condition: { field: "linear_acceleration.x", operator: ">", value: 5.0 }
     recording:
-      topics:
-        - "/camera/image"
-        - "/imu/data"
+      topics: ["/camera/image", "/imu/data"]
       pre_event_duration: 3.0
       post_event_duration: 5.0
-
     rate_limit:
       max_triggers_per_minute: 10
 ```
 
-#### Multi-Camera Recording
+**Multi-camera capture** — grab all cameras on a manual trigger:
 
 ```yaml
 snapshots:
@@ -285,7 +159,6 @@ snapshots:
     trigger:
       topic: "/capture_trigger"
       msg_type: "std_msgs/msg/Bool"
-
     recording:
       topics:
         - "/camera/front/image"
@@ -294,214 +167,151 @@ snapshots:
         - "/camera/right/image"
       pre_event_duration: 1.0
       post_event_duration: 2.0
-
     output:
       path: "/data/recordings"
       format: "mcap"
 ```
 
-## Working with Simulated Time
+</details>
 
-When playing back rosbag files for testing, use simulated time:
+## Use cases
 
-```bash
-# Terminal 1: Play bag with clock
-ros2 bag play your_bag.mcap --clock
+- 🚗 **Collision detection** — sensor data from 5s before impact to 10s after
+- 📈 **Anomaly detection** — record when unusual sensor readings occur
+- 🖱️ **Manual capture** — trigger on demand via topic or REST API
+- 🛑 **Emergency events** — auto-save when safety systems activate
+- 📱 **Remote monitoring** — trigger snapshots from a dashboard or mobile app via REST
 
-# Terminal 2: Launch Time Machine with simulated time
-ros2 launch ros_time_machine time_machine.launch.py \
-  config_file:=my_config.yaml \
-  use_sim_time:=true
-```
+## Architecture
 
-## Viewing Recorded Snapshots
+A single ROS 2 node runs four cooperating components, all driven by one YAML config:
 
-```bash
-# Get info about a recording
-ros2 bag info /tmp/ros_time_machine/snapshots/manual_1234567890
+<p align="center">
+  <img src="docs/images/architecture.svg" alt="ROS Time Machine architecture" width="100%">
+</p>
 
-# Play back a recording
-ros2 bag play /tmp/ros_time_machine/snapshots/manual_1234567890
+For detailed diagrams, sequence flows, and component specs, see **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 
-# View with rqt_bag (GUI)
-rqt_bag /tmp/ros_time_machine/snapshots/manual_1234567890
-```
+## REST API bridge (optional)
 
-## REST API Bridge (Optional)
+Trigger and query snapshots over HTTP — ideal for web dashboards, mobile apps, and non-ROS integrations.
 
-The REST API bridge allows you to trigger snapshots via HTTP requests without requiring ROS tools. This is perfect for:
-- Web dashboards and mobile apps
-- Remote operation and monitoring
-- Integration with non-ROS systems
-- Cloud-based control interfaces
-
-### Installation
-
-The REST bridge requires FastAPI dependencies:
+<details>
+<summary><b>🌐 Setup & endpoints</b></summary>
 
 ```bash
-# Install FastAPI dependencies
+# Install deps & build
 pip3 install --break-system-packages fastapi uvicorn pydantic
-
-# Build the REST bridge package
 colcon build --packages-select ros_time_machine_rest_bridge
 source install/setup.bash
+
+# Run (default port 8080)
+ros2 launch ros_time_machine_rest_bridge rest_bridge.launch.py        # or: port:=9000
 ```
 
-### Usage
-
-#### Start the REST API Bridge
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET`  | `/health` | Health check |
+| `POST` | `/api/snapshots/trigger` | Trigger a snapshot (optional `reason`, `metadata`) |
+| `GET`  | `/api/snapshots` | List all snapshots |
+| `GET`  | `/api/snapshots/{id}` | Snapshot details |
+| `GET`  | `/docs` | Interactive Swagger UI |
 
 ```bash
-# Using launch file (recommended)
-ros2 launch ros_time_machine_rest_bridge rest_bridge.launch.py
-
-# With custom port
-ros2 launch ros_time_machine_rest_bridge rest_bridge.launch.py port:=9000
-
-# Direct run
-ros2 run ros_time_machine_rest_bridge rest_bridge_node
-```
-
-The API will be available at `http://localhost:8080` by default.
-
-#### API Endpoints
-
-**Health Check**
-```bash
-curl http://localhost:8080/health
-```
-
-**Trigger a Snapshot**
-```bash
-# Simple trigger
+# Trigger with metadata
 curl -X POST http://localhost:8080/api/snapshots/trigger \
   -H "Content-Type: application/json" \
-  -d '{"reason": "manual_api_trigger"}'
-
-# With metadata
-curl -X POST http://localhost:8080/api/snapshots/trigger \
-  -H "Content-Type: application/json" \
-  -d '{"reason": "collision_detected", "metadata": {"severity": "high", "location": "intersection_5"}}'
+  -d '{"reason": "collision_detected", "metadata": {"severity": "high"}}'
 ```
 
-**List All Snapshots**
-```bash
-curl http://localhost:8080/api/snapshots
-```
+A `test_rest_api.sh` script is included to verify the API end-to-end.
 
-**Get Snapshot Details**
-```bash
-curl http://localhost:8080/api/snapshots/{snapshot_id}
-```
+</details>
 
-**Interactive API Documentation**
+## Working with recordings & sim time
 
-Visit `http://localhost:8080/docs` in your browser for interactive Swagger UI documentation.
+<details>
+<summary><b>▶️ Playback, sim time, and viewing snapshots</b></summary>
 
-### Testing the REST API
-
-A test script is provided to verify the REST API functionality:
+**Replaying a bag for testing** (use simulated time so buffer timestamps line up):
 
 ```bash
-bash test_rest_api.sh
+# Terminal 1 — play the bag, publishing /clock
+ros2 bag play your_bag.mcap --clock
+
+# Terminal 2 — run with sim time
+ros2 launch ros_time_machine time_machine.launch.py \
+  config_file:=my_config.yaml use_sim_time:=true
 ```
 
-## Testing with Public Datasets
+**Inspecting a snapshot:**
 
-Want to try ROS Time Machine with real sensor data? See our guide on testing with publicly available datasets including:
+```bash
+ros2 bag info /tmp/ros_time_machine/snapshots/emergency_stop_1234567890   # metadata
+ros2 bag play /tmp/ros_time_machine/snapshots/emergency_stop_1234567890   # replay
+rqt_bag   /tmp/ros_time_machine/snapshots/emergency_stop_1234567890       # GUI
+```
 
-- **NVIDIA Isaac R2B** - Multi-sensor dataset with cameras, LiDAR, and IMU (15.5 GB)
-- **AutoCore Ouster OS1-64** - High-quality LiDAR point clouds
-- **Intel RealSense D435** - RGB-D camera data
+</details>
 
-See [docs/TESTING_WITH_DATASETS.md](docs/TESTING_WITH_DATASETS.md) for download links, sample configs, and step-by-step instructions.
+<details>
+<summary><b>⚙️ Launch parameters & running without the launch file</b></summary>
 
-## Advanced Usage
-
-### Launch File Parameters
-
-```python
+```bash
 ros2 launch ros_time_machine time_machine.launch.py \
   config_file:=/path/to/config.yaml \
   log_level:=debug \
   use_sim_time:=true
 ```
 
-Available parameters:
-- `config_file`: Path to YAML configuration (default: example_snapshots.yaml)
-- `log_level`: Logging level (debug, info, warn, error, fatal)
-- `use_sim_time`: Use simulated time from /clock topic (default: false)
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `config_file` | Path to YAML configuration | `example_snapshots.yaml` |
+| `log_level` | `debug`, `info`, `warn`, `error`, `fatal` | `info` |
+| `use_sim_time` | Use simulated time from `/clock` | `false` |
 
-### Running Without Launch File
+Direct run (no launch file):
 
 ```bash
 ros2 run ros_time_machine time_machine_node \
-  --ros-args \
-  -p config_file:=/path/to/config.yaml \
-  -p use_sim_time:=true \
-  --log-level debug
+  --ros-args -p config_file:=/path/to/config.yaml -p use_sim_time:=true --log-level debug
 ```
+
+</details>
+
+## Testing with public datasets
+
+Try ROS Time Machine on real sensor data — NVIDIA Isaac R2B, AutoCore Ouster OS1-64, Intel RealSense D435.
+See **[docs/TESTING_WITH_DATASETS.md](docs/TESTING_WITH_DATASETS.md)** for download links, sample configs, and step-by-step instructions.
 
 ## Troubleshooting
 
-### No messages being recorded
+<details>
+<summary><b>🔧 Common issues</b></summary>
 
-1. Check that topics are publishing: `ros2 topic list`
+**No messages being recorded**
+1. Check topics are publishing: `ros2 topic list`
 2. Verify topic names in config match exactly (case-sensitive)
-3. Enable debug logging to see buffer status
-4. Ensure sufficient pre-event duration for buffer warm-up
+3. Enable `log_level:=debug` to see buffer status
+4. Allow enough `pre_event_duration` for buffer warm-up
 
-### Gaps in recorded data
+**Gaps in recorded data**
+- Increase `pre_event_duration` to extend buffer capacity
+- Ensure `use_sim_time` is set correctly during bag playback
+- Play bags with the `--clock` flag
 
-- Increase buffer capacity by extending `pre_event_duration`
-- Check that `use_sim_time` is set correctly when using bag playback
-- Verify rosbag is played with `--clock` flag
-
-### High memory usage
-
-- Reduce `pre_event_duration` and `post_event_duration`
-- Limit number of topics being recorded
+**High memory usage**
+- Reduce `pre_event_duration` / `post_event_duration`
+- Record fewer topics
 - Use rate limiting to prevent excessive triggers
 
-## Architecture
-
-```
-┌─────────────────┐
-│  Config Manager │  Loads and validates YAML config
-└────────┬────────┘
-         │
-┌────────▼────────┐
-│ Buffer Manager  │  Circular buffers for each topic
-│                 │  • Dynamic topic discovery
-│                 │  • Time-based retrieval
-└────────┬────────┘
-         │
-┌────────▼────────┐
-│ Trigger Monitor │  Monitors topics for conditions
-│                 │  • Condition evaluation
-│                 │  • Rate limiting
-└────────┬────────┘
-         │
-┌────────▼────────┐
-│    Recorder     │  Writes snapshots to disk
-│                 │  • Pre + post event data
-│                 │  • MCAP format
-│                 │  • Multi-threaded
-└─────────────────┘
-```
-
-For detailed architecture diagrams and component specifications, see [ARCHITECTURE.md](ARCHITECTURE.md).
-
-## License
-
-Apache 2.0
+</details>
 
 ## Contributing
 
-Contributions welcome! Please open an issue or pull request.
+Contributions welcome! Please open an [issue](https://github.com/arpitg1304/ros-time-machine/issues) or
+[discussion](https://github.com/arpitg1304/ros-time-machine/discussions), or send a pull request.
 
-## Support
+## License
 
-- **Issues**: https://github.com/arpitg1304/ros_time_machine/issues
-- **Discussions**: https://github.com/arpitg1304/ros_time_machine/discussions
+[Apache 2.0](LICENSE)

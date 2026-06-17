@@ -1,0 +1,119 @@
+<svg width="1280" height="560" viewBox="0 0 1280 560" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="560" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#101a2c"/>
+    </linearGradient>
+    <linearGradient id="preFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0ea5e9"/>
+      <stop offset="1" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="postFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="bufFade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1b2538" stop-opacity="0"/>
+      <stop offset="1" stop-color="#141d30" stop-opacity="1"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="560" rx="20" fill="url(#bg2)"/>
+  <rect x="1" y="1" width="1278" height="558" rx="19" fill="none" stroke="#243049" stroke-width="1.5"/>
+
+  <text x="64" y="62" font-size="30" font-weight="800" fill="#e2e8f0">How it works</text>
+  <text x="64" y="94" font-size="16" fill="#94a3b8">Messages are always buffered in memory. On a trigger, the buffer's pre-event slice is fused with live post-event recording.</text>
+
+  <!-- ===================== LAYER 1: circular buffer ===================== -->
+  <text x="200" y="142" font-size="14.5" font-weight="700" fill="#7dd3fc" letter-spacing="0.4">① CIRCULAR BUFFER&#160;&#160;·&#160;&#160;always recording</text>
+
+  <!-- oldest-dropped fade region -->
+  <g transform="translate(64,160)">
+    <rect x="0" y="0" width="120" height="72" rx="10" fill="#141d30"/>
+    <rect x="0" y="0" width="120" height="72" rx="10" fill="url(#bufFade)"/>
+    <g fill="#334155">
+      <rect x="14" y="18" width="8" height="36" rx="3" opacity="0.4"/>
+      <rect x="30" y="18" width="8" height="36" rx="3" opacity="0.6"/>
+      <rect x="46" y="18" width="8" height="36" rx="3" opacity="0.78"/>
+    </g>
+    <text x="60" y="92" font-size="12" fill="#475569" text-anchor="middle">oldest dropped</text>
+  </g>
+
+  <!-- buffer window (x 200..640, aligned above the PRE segment) -->
+  <g transform="translate(200,160)">
+    <rect x="0" y="0" width="440" height="72" rx="12" fill="#0e1a2c" stroke="#0ea5e9" stroke-width="2"/>
+    <g fill="#38bdf8">
+      <rect x="22" y="17" width="9" height="38" rx="3" opacity="0.55"/>
+      <rect x="52" y="17" width="9" height="38" rx="3" opacity="0.62"/>
+      <rect x="82" y="17" width="9" height="38" rx="3" opacity="0.68"/>
+      <rect x="112" y="17" width="9" height="38" rx="3" opacity="0.74"/>
+      <rect x="142" y="17" width="9" height="38" rx="3" opacity="0.78"/>
+      <rect x="172" y="17" width="9" height="38" rx="3" opacity="0.82"/>
+      <rect x="202" y="17" width="9" height="38" rx="3" opacity="0.86"/>
+      <rect x="232" y="17" width="9" height="38" rx="3" opacity="0.88"/>
+      <rect x="262" y="17" width="9" height="38" rx="3" opacity="0.9"/>
+      <rect x="292" y="17" width="9" height="38" rx="3" opacity="0.92"/>
+      <rect x="322" y="17" width="9" height="38" rx="3" opacity="0.94"/>
+      <rect x="352" y="17" width="9" height="38" rx="3" opacity="0.96"/>
+      <rect x="382" y="17" width="9" height="38" rx="3" opacity="0.98"/>
+      <rect x="408" y="17" width="9" height="38" rx="3"/>
+    </g>
+  </g>
+
+  <!-- ===================== TRIGGER (sits on the PRE/POST seam, x=640) ===================== -->
+  <line x1="640" y1="150" x2="640" y2="452" stroke="#f87171" stroke-width="2" stroke-dasharray="5 5"/>
+  <g transform="translate(640,150)">
+    <circle cx="0" cy="0" r="20" fill="#1e1116" stroke="#f87171" stroke-width="2"/>
+    <path d="M 3 -10 L -6 2 L -1 2 L -3 12 L 7 -2 L 2 -2 Z" fill="#fbbf24" stroke="#f59e0b" stroke-width="1"/>
+    <text x="0" y="-30" font-size="16" font-weight="800" fill="#f87171" text-anchor="middle">TRIGGER</text>
+  </g>
+
+  <!-- ===================== connectors (gap, no header crossing) ===================== -->
+  <g stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)" fill="none">
+    <path d="M 320 234 L 320 344"/>
+    <path d="M 520 234 L 520 344"/>
+    <path d="M 900 246 L 900 344"/>
+  </g>
+  <text x="420" y="296" font-size="13" fill="#7dd3fc" font-style="italic" text-anchor="middle">copied from buffer</text>
+  <text x="900" y="232" font-size="13" fill="#34d399" font-style="italic" text-anchor="middle">📡 live topics</text>
+
+  <!-- ② vertical label, left of the bars (no arrows here) -->
+  <text x="76" y="378" font-size="14.5" font-weight="700" fill="#34d399">② OUTPUT</text>
+  <text x="76" y="398" font-size="13" fill="#6ee7b7">one .mcap</text>
+
+  <!-- ===================== LAYER 2: output rosbag ===================== -->
+  <g transform="translate(0,350)">
+    <!-- PRE segment: x 200..640 -->
+    <rect x="200" y="0" width="440" height="76" rx="12" fill="url(#preFill)"/>
+    <text x="420" y="34" font-size="19" font-weight="700" fill="#e0f2fe" text-anchor="middle">PRE-EVENT</text>
+    <text x="420" y="56" font-size="12.5" fill="#bae6fd" text-anchor="middle">from buffer · pre_event_duration (~5s)</text>
+
+    <!-- POST segment: x 640..1160 -->
+    <rect x="640" y="0" width="520" height="76" rx="12" fill="url(#postFill)"/>
+    <text x="900" y="34" font-size="19" font-weight="700" fill="#d1fae5" text-anchor="middle">POST-EVENT</text>
+    <text x="900" y="56" font-size="12.5" fill="#a7f3d0" text-anchor="middle">live recording · post_event_duration (~10s)</text>
+
+    <!-- seam -->
+    <line x1="640" y1="-4" x2="640" y2="80" stroke="#0b1220" stroke-width="3"/>
+  </g>
+
+  <!-- ===================== time axis ===================== -->
+  <g transform="translate(0,452)">
+    <line x1="200" y1="0" x2="1160" y2="0" stroke="#334155" stroke-width="1.5"/>
+    <g fill="#94a3b8" font-size="13" text-anchor="middle">
+      <line x1="200" y1="-5" x2="200" y2="5" stroke="#334155"/>
+      <text x="200" y="22">t − 5s</text>
+      <line x1="640" y1="-5" x2="640" y2="5" stroke="#f87171"/>
+      <text x="640" y="22" fill="#fca5a5" font-weight="700">t = 0 ⚡</text>
+      <line x1="900" y1="-5" x2="900" y2="5" stroke="#334155"/>
+      <text x="900" y="22">t + 5s</text>
+      <line x1="1160" y1="-5" x2="1160" y2="5" stroke="#334155"/>
+      <text x="1160" y="22">t + 10s</text>
+    </g>
+  </g>
+
+  <text x="640" y="528" font-size="14" fill="#64748b" text-anchor="middle">Result: a complete recording of the moment — with full context leading up to it — saved automatically.</text>
+</svg>
