@@ -91,7 +91,7 @@ Guides: **[Wiring it into your robot](docs/INTEGRATION_GUIDE.md)** · **[Semanti
 # 1. Clone & build
 git clone https://github.com/arpitg1304/ros-time-machine.git
 cd ros-time-machine
-colcon build --packages-select ros_time_machine
+colcon build --packages-up-to ros_time_machine
 source install/setup.bash
 
 # 2. Launch (uses the bundled example config)
@@ -237,7 +237,7 @@ Trigger and query snapshots over HTTP — ideal for web dashboards, mobile apps,
 ```bash
 # Install deps & build
 pip3 install --break-system-packages fastapi uvicorn pydantic
-colcon build --packages-select ros_time_machine_rest_bridge
+colcon build --packages-up-to ros_time_machine_rest_bridge
 source install/setup.bash
 
 # Run (default port 8080)
