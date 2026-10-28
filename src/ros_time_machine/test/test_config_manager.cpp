@@ -216,6 +216,10 @@ snapshots:
     trigger:
       topic: "/trigger1"
       msg_type: "std_msgs/msg/Bool"
+      condition:
+        field: "data"
+        operator: "=="
+        value: 1.0
     recording:
       topics:
         - "/camera1"
@@ -232,6 +236,10 @@ snapshots:
     trigger:
       topic: "/trigger2"
       msg_type: "std_msgs/msg/Bool"
+      condition:
+        field: "data"
+        operator: "=="
+        value: 1.0
     recording:
       topics:
         - "/camera2"

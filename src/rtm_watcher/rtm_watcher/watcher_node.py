@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import signal
 import threading
 from typing import Dict, List
 
@@ -367,6 +368,9 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
+        # Ctrl+C reaches us twice (the terminal and ros2 launch); don't let the second
+        # interrupt the cleanup
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         node.destroy_node()
         rclpy.try_shutdown()
 

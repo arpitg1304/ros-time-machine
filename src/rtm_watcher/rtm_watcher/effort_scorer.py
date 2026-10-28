@@ -20,6 +20,8 @@ units; the watcher calibrates a threshold from normal operation.
 
 from __future__ import annotations
 
+import signal
+
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
@@ -54,6 +56,9 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
+        # Ctrl+C reaches us twice (the terminal and ros2 launch); don't let the second
+        # interrupt the cleanup
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         node.destroy_node()
         rclpy.try_shutdown()
 

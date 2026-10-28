@@ -21,6 +21,7 @@ appended as `object_dropped,<time_s>` for `review eval`.
 
 import math
 import os
+import signal
 
 import rclpy
 from rclpy.node import Node
@@ -86,6 +87,9 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
+        # Ctrl+C reaches us twice (the terminal and ros2 launch); don't let the second
+        # interrupt the cleanup
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         node.destroy_node()
         rclpy.try_shutdown()
 
