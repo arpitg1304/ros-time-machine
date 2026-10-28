@@ -42,3 +42,6 @@ htmlcov/
 
 # Temporary files
 /tmp/
+
+# Local vLLM settings (API key, HF token)
+deploy/vllm/.env

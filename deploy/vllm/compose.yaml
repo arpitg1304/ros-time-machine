@@ -1,0 +1,39 @@
+# vLLM server for ROS Time Machine semantic triggers.
+#
+# Use ./serve.sh, which loads a profile and your .env. To run Compose directly:
+#   set -a; . profiles/qwen3-vl-4b-fp8.env; . ./.env; set +a; docker compose up -d
+services:
+  vllm:
+    image: ${VLLM_IMAGE:-vllm/vllm-openai:v0.31.0}
+    container_name: rtm-vllm
+    restart: unless-stopped
+    ipc: host                       # vLLM uses shared memory between its processes
+    ports:
+      - "${VLLM_BIND:-0.0.0.0}:${VLLM_PORT:-8000}:8000"
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+      VLLM_API_KEY: ${VLLM_API_KEY:-}
+    volumes:
+      - ${HF_CACHE:-${HOME}/.cache/huggingface}:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    # Keep in sync with native_args() in serve.sh (tests/test_deploy.py checks it)
+    command:
+      - --model=${MODEL:?load a profile first, e.g. ./serve.sh qwen3-vl-4b-fp8}
+      - --served-model-name=${SERVED_NAME}
+      - --max-model-len=${MAX_MODEL_LEN:-8192}
+      - --gpu-memory-utilization=${GPU_MEM_UTIL:-0.85}
+      - --max-num-seqs=${MAX_NUM_SEQS:-4}
+      - '--limit-mm-per-prompt={"image": ${MAX_IMAGES:-8}, "video": 0}'
+    healthcheck:
+      test: ["CMD", "python3", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30m             # The first start downloads the model
