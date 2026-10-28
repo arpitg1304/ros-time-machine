@@ -5,6 +5,13 @@ care about, measured against ground truth on your own data. It is written for a 
 team adding semantic triggers to an existing ROS 2 robot; no prior knowledge of this repo
 is assumed.
 
+**In a hurry?** After [stage 2](#2-install-on-the-robot), run
+`ros2 run rtm_watcher quickstart` with your robot running. It finds your camera and
+joint-state topics, writes the configs from stages 4 and 5 into `rtm_quickstart/`, and saves
+a clip each time you press Enter. `--vlm fake` adds the watcher (stage 6), and
+`--vlm <url> --model <name>` a real model (stages 7 and 8). The stages below explain what
+it set up and how to tune it.
+
 Work through it in order. Every stage ends with a check, so a problem shows up in the stage
 that caused it.
 
@@ -72,21 +79,14 @@ source /opt/ros/$ROS_DISTRO/setup.bash
 sudo apt install ros-dev-tools python3-pil python3-yaml python3-pytest
 sudo rosdep init 2>/dev/null; rosdep update
 rosdep install --from-paths src --ignore-src -y
-colcon build --symlink-install --cmake-args -DPython3_EXECUTABLE=/usr/bin/python3
+colcon build --symlink-install
 source install/setup.bash
 ```
 
-**If you use pyenv, conda or uv,** make sure ROS sees the system Python. ROS Jazzy is built
-for the system's Python 3.12. If another interpreter comes first on `PATH`, `rclpy` fails
-to import, or CMake picks a different interpreter and the message build fails with
-`No module named 'em'`. The `-DPython3_EXECUTABLE` flag above fixes the build. For running
-nodes and tests:
-
-```bash
-pyenv local system               # pyenv: in the workspace directory
-conda deactivate                 # conda
-python3 -c "import rclpy"        # must succeed with ROS sourced
-```
+**pyenv, conda and uv are fine.** The build looks up the Python version ROS was built for
+and uses that interpreter, whatever `python3` is first on `PATH`. It logs
+`Using ROS's Python: /usr/bin/python3.12`. To choose one yourself, add
+`--cmake-args -DPython3_EXECUTABLE=/path/to/python3`.
 
 **Check:** all five packages build: `ros_time_machine_msgs`, `ros_time_machine`,
 `ros_time_machine_rest_bridge`, `rtm_watcher`, `rtm_vlm`. The full test suite is in
@@ -224,8 +224,11 @@ watcher:
 ## 6. Test the plumbing with the fake VLM
 
 Before involving a model, check that your topics flow end to end. The fake VLM is a local
-OpenAI-compatible server that reports your label on every Nth request. Run each command in
-its own terminal, with the workspace sourced:
+OpenAI-compatible server that reports your label on every Nth request.
+
+**Shortcut:** `ros2 run rtm_watcher quickstart --vlm fake` does all of this in one terminal,
+with configs generated for your topics. To run the pieces yourself with your own configs,
+use one terminal per command, with the workspace sourced:
 
 ```bash
 # 1. Time Machine with your config
@@ -483,7 +486,7 @@ Any ROS node can publish `EventTrigger` with an `event_stamp` in the past.
 
 | Symptom | Fix |
 |---|---|
-| `import rclpy` fails, or the build fails with `No module named 'em'` | Another Python is shadowing the system one; see [stage 2](#2-install-on-the-robot) |
+| `ImportError: libpython3.X...` or `No module named 'em'` | The build used a different Python from ROS. Check the `Using ROS's Python` line in the build log, delete `build/` and `install/`, and rebuild; or set `-DPython3_EXECUTABLE` ([stage 2](#2-install-on-the-robot)) |
 | Clips are empty or cut short during bag replay | Run with `use_sim_time:=true` and play with `--clock` |
 | `Topic ... not currently available` | Topic names must match exactly; Time Machine starts buffering as soon as they appear |
 | Watcher refuses the endpoint ("frames would leave the site") | Use a LAN IP, a dotless or `.local` hostname, or set `allow_remote: true` deliberately |

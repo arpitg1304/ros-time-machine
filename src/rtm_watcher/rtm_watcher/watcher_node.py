@@ -74,12 +74,17 @@ class WatcherNode(Node):
         self.declare_parameter('endpoint', '')
         self.declare_parameter('model', '')
         self.declare_parameter('api_key_env', '')
+        # Opt in to a hosted endpoint from the command line; false keeps the file's setting
+        self.declare_parameter('allow_remote', False)
         path = self.get_parameter('watch_list').value
         if not path:
             raise WatchListError('set the watch_list parameter to a watch list YAML file')
-        self.config = load_watch_list(path, {
+        overrides = {
             name: self.get_parameter(name).value
-            for name in ('endpoint', 'model', 'api_key_env')})
+            for name in ('endpoint', 'model', 'api_key_env')}
+        if self.get_parameter('allow_remote').value:
+            overrides['allow_remote'] = True
+        self.config = load_watch_list(path, overrides)
         self.use_header_stamp = bool(self.get_parameter('use_header_stamp').value)
 
         client = OpenAICompatibleClient(

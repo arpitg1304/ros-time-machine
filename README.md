@@ -49,16 +49,39 @@ ros2 launch rtm_watcher demo.launch.py          # fake camera drops a cup every 
 ros2 run rtm_watcher review list /tmp/ros_time_machine/demo
 ```
 
-Then swap in a real model. On an NVIDIA GPU (RTX 40-series, 16 GB):
+### Your own robot: first clip in a minute
+
+With your robot running (or a bag: `ros2 bag play <bag> --loop`):
+
+```bash
+ros2 run rtm_watcher quickstart              # finds your cameras and joint states; Enter saves the last 10 s
+ros2 run rtm_watcher quickstart --vlm fake   # adds the VLM watcher, with a scripted model
+```
+
+`quickstart` writes `rtm_quickstart/time_machine.yaml` and `rtm_quickstart/watch_list.yaml`
+for your topics, and never overwrites them once they exist. Describe your own events in the
+watch list, then point it at a real model.
+
+**On an NVIDIA GPU** (RTX 40-series, 16 GB), on this machine or one on your LAN:
 
 ```bash
 cd deploy/vllm && cp .env.example .env && ./serve.sh   # Qwen3-VL-4B FP8 in Docker
-ros2 launch rtm_watcher demo.launch.py vlm:=external \
-    endpoint:=http://127.0.0.1:8000/v1 model:=qwen3-vl-4b-instruct
+ros2 run rtm_watcher quickstart --vlm http://127.0.0.1:8000/v1 --model qwen3-vl-4b-instruct
 ```
 
-On a Jetson, Apple Silicon or any other GPU, `ros2 launch rtm_vlm semantic_stack.launch.py`
-picks a Qwen3-VL size that fits the device and runs the whole stack.
+**Without a GPU**, use a hosted model. Camera frames leave your site, so this needs
+`--allow-remote`:
+
+```bash
+export GEMINI_API_KEY=...
+ros2 run rtm_watcher quickstart --allow-remote --api-key-env GEMINI_API_KEY \
+    --vlm https://generativelanguage.googleapis.com/v1beta/openai --model <a Flash-Lite model id>
+```
+
+**On a Jetson or Apple Silicon**, `ros2 launch rtm_vlm semantic_stack.launch.py` picks a
+Qwen3-VL size that fits the device and runs the whole stack. To score any model against
+ground truth, run the demo with it: `ros2 launch rtm_watcher demo.launch.py vlm:=external
+endpoint:=... model:=...` ([how](docs/TESTING_V2_ON_UBUNTU.md#6-real-vlm-end-to-end)).
 
 ### How a trigger becomes a clip
 

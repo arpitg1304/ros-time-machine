@@ -29,6 +29,8 @@ def generate_launch_description():
                               description='Served model name (vlm:=external)'),
         DeclareLaunchArgument('api_key_env', default_value='',
                               description='Env var holding the server API key, if it has one'),
+        DeclareLaunchArgument('allow_remote', default_value='false',
+                              description='true: allow a hosted endpoint (frames leave the site)'),
         DeclareLaunchArgument('scenario', default_value='drop', choices=['drop', 'static']),
         DeclareLaunchArgument('period_s', default_value='20.0',
                               description='Seconds between drops'),
@@ -62,6 +64,7 @@ def generate_launch_description():
             'endpoint': LaunchConfiguration('endpoint'),
             'model': LaunchConfiguration('model'),
             'api_key_env': LaunchConfiguration('api_key_env'),
+            'allow_remote': LaunchConfiguration('allow_remote'),
         }])
 
     sensors = Node(

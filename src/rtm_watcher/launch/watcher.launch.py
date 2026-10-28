@@ -30,6 +30,8 @@ def generate_launch_description():
                               description='Override the watch list model'),
         DeclareLaunchArgument('api_key_env', default_value='',
                               description='Env var holding the server API key'),
+        DeclareLaunchArgument('allow_remote', default_value='false',
+                              description='true: allow a hosted endpoint (frames leave the site)'),
         DeclareLaunchArgument('use_sim_time', default_value='false'),
     ]
 
@@ -44,6 +46,7 @@ def generate_launch_description():
                 'endpoint': LaunchConfiguration('endpoint'),
                 'model': LaunchConfiguration('model'),
                 'api_key_env': LaunchConfiguration('api_key_env'),
+                'allow_remote': LaunchConfiguration('allow_remote'),
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
             }],
         ),

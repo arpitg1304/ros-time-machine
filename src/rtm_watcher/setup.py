@@ -30,6 +30,7 @@ setup(
             'demo_sensors = rtm_watcher.demo_sensors:main',
             'effort_scorer = rtm_watcher.effort_scorer:main',
             'review = rtm_watcher.review:main',
+            'quickstart = rtm_watcher.quickstart:main',
         ],
     },
 )
