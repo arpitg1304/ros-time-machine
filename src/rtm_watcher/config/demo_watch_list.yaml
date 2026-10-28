@@ -1,0 +1,20 @@
+# Watch list for `ros2 launch rtm_watcher demo.launch.py`.
+# vlm:=fake uses the endpoint below (the scripted VLM); vlm:=external overrides
+# endpoint and model from the launch arguments.
+watcher:
+  endpoint: http://127.0.0.1:8765/v1
+  model: fake-vlm
+  request_timeout_s: 30            # a real model's first call can be slow
+  cameras: [/camera/front/image_raw/compressed]
+  state_topics: [/joint_states]
+  sample_hz: 1.0
+  context_frames: 4
+  robot_context: "A robot arm with a two-finger gripper holds a red cup above a table."
+  cooldown_s: 10                   # the cup stays on the floor ~8 s after each drop
+  events:
+    - label: object_dropped
+      describe: "An object falls out of the gripper or off the table."
+      profile: manipulation
+    - label: person_in_cell        # never happens in the demo: any hit is a false alarm
+      describe: "A person enters the robot's work area."
+      profile: manipulation
