@@ -101,32 +101,54 @@ Subscribes to trigger topics and decides when to record.
 
 ### 4 · Recorder
 
-Coordinates recording on trigger events, on a worker thread pool.
+Turns time-addressed triggers into clips, on a worker thread pool.
 
-- Multi-threaded recording with a worker pool (multiple simultaneous recordings)
-- Buffer-dump coordination for pre-event data
-- Live post-event recording via temporary subscriptions
-- MCAP rosbag2 output
+- Every trigger (rule, service, `EventTrigger`, kept pin) becomes an `EventRequest` with a
+  window `[start, end]` in robot ROS time
+- A **trigger queue** merges overlapping windows of one profile and enforces per-profile rate
+  limits and a global clips-per-hour budget
+- A dispatcher releases a clip once robot time passes `end + write_settle_time`. There's no
+  wall-clock sleep, so sim time and bag replay work
+- Pending and in-flight clips, and **pins**, act as an eviction guard on the buffers: protected
+  messages move to a bounded side store instead of being dropped
+- MCAP or sqlite3 rosbag2 output plus an `event.json` sidecar
 
-Per recording job:
-1. Dump the pre-event buffer slice to the rosbag
-2. Subscribe to topics and record live for the post-event duration
-3. Close & finalize the rosbag
-4. Clean up and publish status
+Per clip:
+1. Wait until robot time has passed the window end
+2. Read every profile topic's messages in `[start, end]` from the buffers (noting whether each
+   buffer still reached back to `start`)
+3. Merge by timestamp with a stable topic tie-break and write the bag
+4. Write `event.json`, release the protection, publish `~/recording_status`
+
+The queue, pin manager and sidecar writer are ROS-free (`rtm_core`) and unit-tested on their own.
 
 ### 5 · Service & topic interface
 
-Runtime control and monitoring.
+Runtime control and monitoring (`RosInterface`).
 
-- **Services:** manual snapshot triggering, status queries, snapshot listing
-- **Topics:** recording-status events, buffer statistics
+- **Subscriptions:** `/time_machine/event_trigger` (`EventTrigger`)
+- **Services:** `~/trigger_snapshot`, `~/pin_range`, `~/release_pin`, `~/list_snapshots`, `~/get_status`
+- **Topics:** `~/recording_status` (per finished clip), `~/buffer_stats` (per topic, incl. pins)
+
+### 6 · VLM watcher (`rtm_watcher`, Python)
+
+A separate node, so it can run on the robot, a LAN box, or next to a GPU.
+
+- Samples cameras at `sample_hz` in robot time, keeps the last N frames per camera
+- Prompts an OpenAI-compatible VLM with numbered frames, a state summary and the watch list
+- Validates the JSON answer; maps `frame_index` back to that frame's timestamp
+- Confidence threshold → per-label cooldown → sampling → `EventTrigger`
+- Cascade: subscribes to scorer topics, calibrates a conformal threshold, pins spikes via
+  `~/pin_range`, judges the pinned frames, answers with `~/release_pin`
+
+See [docs/SEMANTIC_TRIGGERS.md](docs/SEMANTIC_TRIGGERS.md) for configuration and behavior.
 
 ## Technology stack
 
 **ROS 2**
 - **Distribution:** Jazzy Jalisco (Ubuntu 24.04)
 - **Build system:** colcon with `ament_cmake`
-- **Language:** C++17 (core) · Python (REST bridge)
+- **Language:** C++17 (core) · Python (REST bridge, VLM watcher)
 - **Key dependencies:** `rclcpp`, `rosbag2_cpp`, `std_msgs`, `sensor_msgs`, `yaml-cpp`
 
 **Testing**

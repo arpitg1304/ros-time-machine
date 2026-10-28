@@ -48,6 +48,41 @@ single MCAP rosbag — capturing the full story of the moment, automatically.
 | 🧵 **Multi-threaded** | Worker pool handles multiple simultaneous recordings |
 | 🌐 **REST API (optional)** | Trigger & list snapshots over HTTP from web apps, mobile, or non-ROS systems |
 
+## New in v2: semantic triggers
+
+Describe the moments you care about in plain English, and a vision-language model watching a
+low-rate copy of the cameras fires **time-addressed** triggers. Time Machine saves the window
+around the frame where the event was *seen*, not around the moment the model answered, so
+detector latency costs nothing.
+
+```yaml
+# watch_list.yaml
+watcher:
+  endpoint: http://localhost:8000/v1        # vLLM, llama.cpp, Ollama, ...
+  model: qwen3-vl-4b-instruct
+  cameras: [/camera/front/image_raw/compressed]
+  events:
+    - label: object_dropped
+      describe: "An object falls out of the gripper or off the table."
+      profile: manipulation
+```
+
+| | |
+|---|---|
+| 🕰️ **Time-addressed triggers** | `EventTrigger` names a moment in robot time; any detector (VLM, scorer, human, REST) can point at the past |
+| 👁️ **VLM watcher** | `rtm_watcher` prompts any OpenAI-compatible VLM, validates its JSON, applies confidence, cooldown and sampling |
+| 📌 **Pin, then judge** | Cheap scorers pin a window instantly (conformal-calibrated thresholds); the VLM keeps or releases it |
+| 🧾 **Self-explaining clips** | Every clip gets an `event.json`: label, caption, confidence, model + prompt version, detection lag, coverage |
+| 🧮 **Merging & budgets** | Overlapping triggers become one clip; per-profile rate limits and a clips-per-hour budget |
+| ✅ **Review loop** | `review` CLI: mark clips good/bad, precision per label, suggested confidence thresholds |
+
+Try the whole pipeline without a GPU: `ros2 launch rtm_watcher demo.launch.py`.
+Run it for real with a local Qwen3-VL sized to your device (Jetson, NVIDIA GPU, Apple Silicon):
+`ros2 launch rtm_vlm semantic_stack.launch.py`.
+
+Guides: **[Semantic triggers](docs/SEMANTIC_TRIGGERS.md)** · **[Choosing and running a VLM](docs/VLM_BACKENDS.md)** ·
+**[vLLM server on a GPU box](deploy/vllm/README.md)** · **[Testing v2 on Ubuntu](docs/TESTING_V2_ON_UBUNTU.md)**
+
 ## Quick start
 
 > **Prerequisites:** ROS 2 Jazzy (Ubuntu 24.04) · a C++17 compiler · rosbag2 with MCAP support
@@ -213,6 +248,7 @@ ros2 launch ros_time_machine_rest_bridge rest_bridge.launch.py        # or: port
 |--------|----------|-------------|
 | `GET`  | `/health` | Health check |
 | `POST` | `/api/snapshots/trigger` | Trigger a snapshot (optional `reason`, `metadata`) |
+| `POST` | `/api/events` | Time-addressed trigger: `label`, `seconds_ago`, optional `profile`, `pre_event`, `post_event` |
 | `GET`  | `/api/snapshots` | List all snapshots |
 | `GET`  | `/api/snapshots/{id}` | Snapshot details |
 | `GET`  | `/docs` | Interactive Swagger UI |
