@@ -28,10 +28,16 @@ sudo rosdep init 2>/dev/null; rosdep update
 rosdep install --from-paths src --ignore-src -y     # mcap storage plugin, opencv, ...
 ```
 
+If pyenv, conda or uv puts another Python first on `PATH`, ROS Jazzy (built for the system
+Python 3.12) breaks: `import rclpy` fails, or CMake picks the wrong interpreter. Use the
+system one in this workspace (`pyenv local system`, `conda deactivate`) and check that
+`python3 -c "import rclpy"` works.
+
 ## 2. Build
 
 ```bash
-colcon build --symlink-install 2>&1 | tee /tmp/rtm_build.log
+colcon build --symlink-install --cmake-args -DPython3_EXECUTABLE=/usr/bin/python3 \
+    2>&1 | tee /tmp/rtm_build.log
 source install/setup.bash
 ```
 
@@ -64,7 +70,7 @@ rm -rf /tmp/ros_time_machine/demo
 ros2 launch rtm_watcher demo.launch.py
 ```
 
-Watch for these lines, in order:
+Watch for these lines, in order (2 and 3 come from different processes, so they may swap):
 
 1. `Subscribed to camera /camera/front/image_raw/compressed`
 2. `EventTrigger object_dropped (0.90) -> manipulation ... [detected N.Ns after it happened]`
@@ -100,6 +106,9 @@ cp .env.example .env
 ./check.sh                    # note the suggested max_trigger_latency
 ```
 
+If port 8000 is taken (`ss -ltn 'sport = :8000'`), set `VLLM_PORT` in `.env` and use that
+port in step 6's `endpoint`. Set `VLLM_BIND=127.0.0.1` when nothing else needs to connect.
+
 On a 16 GB RTX 40-series card, the default profile leaves plenty of headroom. Try
 `./serve.sh qwen3-vl-8b-fp8` afterwards to compare.
 
@@ -122,14 +131,18 @@ ros2 run rtm_watcher review eval /tmp/ros_time_machine/demo \
 ros2 topic echo --once /rtm_watcher/status --field data    # before stopping: call stats
 ```
 
-What good looks like:
+What good looks like. Recall is the objective; extra clips are an accepted cost. Measured
+here: `qwen3-vl-4b-fp8` on an RTX 4070 Ti SUPER, 15 drops.
 
-| Metric | Expect | If not |
-|---|---|---|
-| recall | ≥ 0.9 | Missed drops: try `qwen3-vl-8b-fp8`, or check the watcher log for errors |
-| precision | ≥ 0.9 | `person_in_cell` hits or repeat drops: raise `min_confidence` or `cooldown_s` |
-| lag_p50_s | ≈ 1–3 s | Compare with `./check.sh`; set `max_trigger_latency` above `lag_p99_s` |
-| pre_event_coverage | 1.0 | Buffer too short for the lag: raise `max_trigger_latency` in `demo_semantic.yaml` |
+| Metric | Expect | Measured | If not |
+|---|---|---|---|
+| recall | 1.0 | 1.000 | Missed drops: try `qwen3-vl-8b-fp8`, lower `min_confidence`, or check the watcher log for errors |
+| precision | ≈ 0.5 | 0.484 | The demo's `cooldown_s: 5` saves each drop twice: once as it falls, once ~8 s later while the cup still lies on the floor. Much lower: look for `person_in_cell` hits |
+| lag_p50_s | ≈ 1–3 s | 1.37 | Compare with `./check.sh`; set `max_trigger_latency` above `lag_p99_s` |
+| pre_event_coverage | ≥ 0.9 | 0.968 | A clip in the first seconds after launch is short because the buffer hasn't filled yet. Other short clips: raise `max_trigger_latency` in `demo_semantic.yaml` |
+
+With `cooldown_s: 10` the same run gave recall 0.933 and precision 0.875: a false alarm at
+startup started the cooldown and hid the first real drop.
 
 The same eval over a replayed real-robot bag (`ros2 bag play --clock` with
 `use_sim_time:=true`) and hand-labelled `truth.csv` is how to compare models and settings

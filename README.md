@@ -80,7 +80,7 @@ Try the whole pipeline without a GPU: `ros2 launch rtm_watcher demo.launch.py`.
 Run it for real with a local Qwen3-VL sized to your device (Jetson, NVIDIA GPU, Apple Silicon):
 `ros2 launch rtm_vlm semantic_stack.launch.py`.
 
-Guides: **[Semantic triggers](docs/SEMANTIC_TRIGGERS.md)** · **[Choosing and running a VLM](docs/VLM_BACKENDS.md)** ·
+Guides: **[Wiring it into your robot](docs/INTEGRATION_GUIDE.md)** · **[Semantic triggers](docs/SEMANTIC_TRIGGERS.md)** · **[Choosing and running a VLM](docs/VLM_BACKENDS.md)** ·
 **[vLLM server on a GPU box](deploy/vllm/README.md)** · **[Testing v2 on Ubuntu](docs/TESTING_V2_ON_UBUNTU.md)**
 
 ## Quick start
