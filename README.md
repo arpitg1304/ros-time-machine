@@ -8,11 +8,13 @@
   <img src="https://img.shields.io/badge/C%2B%2B-17-a78bfa.svg" alt="C++17">
   <img src="https://img.shields.io/badge/storage-MCAP-10b981.svg" alt="MCAP">
   <img src="https://img.shields.io/badge/REST_API-optional-fb7185.svg" alt="REST API">
+  <a href="#new-in-v2-semantic-triggers"><img src="https://img.shields.io/badge/v2-semantic_triggers-a78bfa.svg" alt="v2: semantic triggers"></a>
 </p>
 
 <p align="center">
   <b>A dashcam for your robot.</b> Continuously buffer recent sensor data, and when something
   important happens, automatically save a rosbag with the moments <i>before</i> and <i>after</i> the event.
+  <br><b>New in v2:</b> describe those moments in plain English, and a vision-language model decides when to save.
 </p>
 
 ---
@@ -25,6 +27,88 @@ data you *really* want is the few seconds **leading up to it**. But you can't re
 ROS Time Machine keeps a rolling, in-memory buffer of the last *N* seconds for each topic. The instant a
 trigger fires, it stitches that **pre-event** buffer together with **live post-event** recording into a
 single MCAP rosbag — capturing the full story of the moment, automatically.
+
+## New in v2: semantic triggers
+
+Describe the moments you care about in plain English. A vision-language model (VLM) watches a
+1 frame-per-second copy of your cameras, and when it sees one of your events, Time Machine saves
+the full-rate, multi-topic clip around the moment it **happened**, not the moment the model
+answered. Every clip explains itself in an `event.json`.
+
+<p align="center">
+  <img src="docs/images/semantic-yaml-to-clip.svg" alt="Left: a watch list that describes object_dropped in plain English. Right: the clip it produced, an 8 s MCAP bag plus event.json with confidence 0.95, the caption 'The red cup falls from the gripper', a detection lag of 0.64 s and pre_event_complete true." width="100%">
+</p>
+
+### Try it in two minutes, no GPU needed
+
+```bash
+colcon build && source install/setup.bash
+ros2 launch rtm_watcher demo.launch.py          # fake camera drops a cup every 20 s; a scripted VLM spots it
+
+# in another terminal, after about 15 s
+ros2 run rtm_watcher review list /tmp/ros_time_machine/demo
+```
+
+Then swap in a real model. On an NVIDIA GPU (RTX 40-series, 16 GB):
+
+```bash
+cd deploy/vllm && cp .env.example .env && ./serve.sh   # Qwen3-VL-4B FP8 in Docker
+ros2 launch rtm_watcher demo.launch.py vlm:=external \
+    endpoint:=http://127.0.0.1:8000/v1 model:=qwen3-vl-4b-instruct
+```
+
+On a Jetson, Apple Silicon or any other GPU, `ros2 launch rtm_vlm semantic_stack.launch.py`
+picks a Qwen3-VL size that fits the device and runs the whole stack.
+
+### How a trigger becomes a clip
+
+<p align="center">
+  <img src="docs/images/semantic-flow.svg" alt="Two YAML files configure two nodes. Sensors feed the watcher at 1 Hz and Time Machine's buffers at full rate. The watcher sends frames and a prompt to the VLM, gets JSON back, and publishes an EventTrigger that Time Machine queues, protects in its buffers and writes out as MCAP plus event.json." width="100%">
+</p>
+
+The watcher turns your events into a prompt, validates the model's JSON, and filters detections
+by confidence and cooldown. What crosses to Time Machine is a single `EventTrigger` message
+naming a moment in robot time, so a scorer, an operator or an HTTP call can send one just as
+well. **[Follow one event through all ten steps →](docs/SEMANTIC_TRIGGER_FLOW.md)**
+
+### Why the model's latency costs nothing
+
+<p align="center">
+  <img src="docs/images/semantic-timeline.svg" alt="Timeline of one real drop: the cup drops at T, the frame that shows it is stamped T+0.73 s, the trigger arrives at T+1.37 s, and the clip covering T−4.27 s to T+3.73 s is written at T+3.96 s." width="100%">
+</p>
+
+The window is cut around the frame where the model saw the event. A slower model just needs a
+longer buffer (`max_trigger_latency`); it never loses the seconds before the event.
+
+### Measured
+
+The demo, 5 minutes and 15 cup drops, with Qwen3-VL-4B FP8 on vLLM on an RTX 4070 Ti SUPER,
+scored with `review eval` against ground truth:
+
+| Recall | Detection lag (p50 / p99) | VLM call (warm p50) | Clips with full pre-event data |
+|---|---|---|---|
+| **15 / 15 drops** | 1.37 s / 1.67 s | 0.23 s | 30 / 31 |
+
+The defaults favour recall: each drop was saved about twice, which costs disk and review time,
+not data. See [Testing v2 on Ubuntu](docs/TESTING_V2_ON_UBUNTU.md#6-real-vlm-end-to-end).
+
+### What else v2 adds
+
+| | |
+|---|---|
+| 🕰️ **Time-addressed triggers** | `EventTrigger` names a moment in robot time; any detector (VLM, scorer, human, REST) can point at the past |
+| 👁️ **VLM watcher** | `rtm_watcher` prompts any OpenAI-compatible VLM, validates its JSON, applies confidence, cooldown and sampling |
+| 📌 **Pin, then judge** | Cheap scorers pin a window instantly (conformal-calibrated thresholds); the VLM keeps or releases it |
+| 🧾 **Self-explaining clips** | Every clip gets an `event.json`: label, caption, confidence, model + prompt version, detection lag, coverage |
+| 🧮 **Merging & budgets** | Overlapping triggers become one clip; per-profile rate limits and a clips-per-hour budget |
+| ✅ **Review loop** | `review` CLI: mark clips good/bad, precision per label, suggested confidence thresholds |
+
+### Guides
+
+- **[Wiring it into your robot](docs/INTEGRATION_GUIDE.md)**: from your topics to measured clips, step by step
+- **[How a trigger becomes a clip](docs/SEMANTIC_TRIGGER_FLOW.md)**: the code path, with a real prompt and `event.json`
+- **[Semantic triggers](docs/SEMANTIC_TRIGGERS.md)**: design, configuration, interfaces, cascade, review
+- **[Choosing and running a VLM](docs/VLM_BACKENDS.md)** · **[vLLM server on a GPU box](deploy/vllm/README.md)** · **[Testing v2 on Ubuntu](docs/TESTING_V2_ON_UBUNTU.md)**
 
 ## How it works
 
@@ -48,42 +132,7 @@ single MCAP rosbag — capturing the full story of the moment, automatically.
 | 🧵 **Multi-threaded** | Worker pool handles multiple simultaneous recordings |
 | 🌐 **REST API (optional)** | Trigger & list snapshots over HTTP from web apps, mobile, or non-ROS systems |
 
-## New in v2: semantic triggers
-
-Describe the moments you care about in plain English, and a vision-language model watching a
-low-rate copy of the cameras fires **time-addressed** triggers. Time Machine saves the window
-around the frame where the event was *seen*, not around the moment the model answered, so
-detector latency costs nothing.
-
-```yaml
-# watch_list.yaml
-watcher:
-  endpoint: http://localhost:8000/v1        # vLLM, llama.cpp, Ollama, ...
-  model: qwen3-vl-4b-instruct
-  cameras: [/camera/front/image_raw/compressed]
-  events:
-    - label: object_dropped
-      describe: "An object falls out of the gripper or off the table."
-      profile: manipulation
-```
-
-| | |
-|---|---|
-| 🕰️ **Time-addressed triggers** | `EventTrigger` names a moment in robot time; any detector (VLM, scorer, human, REST) can point at the past |
-| 👁️ **VLM watcher** | `rtm_watcher` prompts any OpenAI-compatible VLM, validates its JSON, applies confidence, cooldown and sampling |
-| 📌 **Pin, then judge** | Cheap scorers pin a window instantly (conformal-calibrated thresholds); the VLM keeps or releases it |
-| 🧾 **Self-explaining clips** | Every clip gets an `event.json`: label, caption, confidence, model + prompt version, detection lag, coverage |
-| 🧮 **Merging & budgets** | Overlapping triggers become one clip; per-profile rate limits and a clips-per-hour budget |
-| ✅ **Review loop** | `review` CLI: mark clips good/bad, precision per label, suggested confidence thresholds |
-
-Try the whole pipeline without a GPU: `ros2 launch rtm_watcher demo.launch.py`.
-Run it for real with a local Qwen3-VL sized to your device (Jetson, NVIDIA GPU, Apple Silicon):
-`ros2 launch rtm_vlm semantic_stack.launch.py`.
-
-Guides: **[Wiring it into your robot](docs/INTEGRATION_GUIDE.md)** · **[Semantic triggers](docs/SEMANTIC_TRIGGERS.md)** · **[Choosing and running a VLM](docs/VLM_BACKENDS.md)** ·
-**[vLLM server on a GPU box](deploy/vllm/README.md)** · **[Testing v2 on Ubuntu](docs/TESTING_V2_ON_UBUNTU.md)**
-
-## Quick start
+## Quick start: rule triggers
 
 > **Prerequisites:** ROS 2 Jazzy (Ubuntu 24.04) · a C++17 compiler · rosbag2 with MCAP support
 

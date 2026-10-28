@@ -1,0 +1,71 @@
+<svg width="1280" height="450" viewBox="0 0 1280 450" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="tbg" x1="0" y1="0" x2="0" y2="450" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#101a2c"/>
+    </linearGradient>
+    <linearGradient id="tbuf" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2a3a57" stop-opacity="0"/>
+      <stop offset="0.12" stop-color="#2a3a57" stop-opacity="1"/>
+      <stop offset="1" stop-color="#2a3a57" stop-opacity="1"/>
+    </linearGradient>
+    <marker id="tar" markerWidth="11" markerHeight="11" refX="6.5" refY="3.2" orient="auto">
+      <path d="M0,0 L7,3.2 L0,6.4 Z" fill="#7c89a3"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="450" rx="20" fill="url(#tbg)"/>
+  <rect x="1" y="1" width="1278" height="448" rx="19" fill="none" stroke="#243049" stroke-width="1.5"/>
+  <text x="64" y="58" font-size="30" font-weight="800" fill="#e2e8f0">Triggers name a time</text>
+  <text x="64" y="88" font-size="16" fill="#94a3b8">One real drop, to scale. The window is cut around the frame where the VLM saw the event, so model latency costs no data.</text>
+
+  <!-- x(t) = 120 + (t + 6) * 92 -->
+
+  <!-- event marks -->
+  <line x1="672" y1="124" x2="672" y2="280" stroke="#e2e8f0" stroke-width="2.5"/>
+  <text x="662" y="140" font-size="15" font-weight="700" fill="#e2e8f0" text-anchor="end">cup drops · T</text>
+  <text x="662" y="160" font-size="12.5" fill="#94a3b8" text-anchor="end">ground truth, from truth.csv</text>
+
+  <line x1="739.2" y1="170" x2="739.2" y2="280" stroke="#a78bfa" stroke-width="2.5"/>
+  <text x="749" y="186" font-size="15" font-weight="700" fill="#c4b5fd">frame that shows it · T+0.73 s</text>
+  <text x="749" y="206" font-size="12.5" fill="#94a3b8">becomes event_stamp</text>
+
+  <line x1="798" y1="218" x2="798" y2="280" stroke="#a78bfa" stroke-width="2.5" stroke-dasharray="5 4"/>
+  <text x="808" y="234" font-size="15" font-weight="700" fill="#c4b5fd">trigger arrives · T+1.37 s</text>
+  <text x="808" y="254" font-size="12.5" fill="#94a3b8">0.64 s after the frame</text>
+
+  <line x1="1036.3" y1="124" x2="1036.3" y2="280" stroke="#34d399" stroke-width="2.5"/>
+  <text x="1026" y="140" font-size="15" font-weight="700" fill="#6ee7b7" text-anchor="end">clip written · T+3.96 s</text>
+  <text x="1026" y="160" font-size="12.5" fill="#94a3b8" text-anchor="end">window end + 0.2 s settle</text>
+
+  <!-- axis -->
+  <line x1="120" y1="280" x2="1140" y2="280" stroke="#3b4a6b" stroke-width="1.5"/>
+  <g stroke="#3b4a6b" stroke-width="1.2">
+    <line x1="120" y1="274" x2="120" y2="286"/><line x1="212" y1="274" x2="212" y2="286"/>
+    <line x1="304" y1="274" x2="304" y2="286"/><line x1="396" y1="274" x2="396" y2="286"/>
+    <line x1="488" y1="274" x2="488" y2="286"/><line x1="580" y1="274" x2="580" y2="286"/>
+    <line x1="672" y1="274" x2="672" y2="286"/><line x1="764" y1="274" x2="764" y2="286"/>
+    <line x1="856" y1="274" x2="856" y2="286"/><line x1="948" y1="274" x2="948" y2="286"/>
+    <line x1="1040" y1="274" x2="1040" y2="286"/><line x1="1132" y1="274" x2="1132" y2="286"/>
+  </g>
+  <g font-size="12.5" fill="#7c89a3" text-anchor="middle">
+    <text x="120" y="304">−6 s</text><text x="212" y="304">−5</text><text x="304" y="304">−4</text>
+    <text x="396" y="304">−3</text><text x="488" y="304">−2</text><text x="580" y="304">−1</text>
+    <text x="672" y="304" font-weight="700" fill="#e2e8f0">T</text><text x="764" y="304">+1</text>
+    <text x="856" y="304">+2</text><text x="948" y="304">+3</text><text x="1040" y="304">+4</text>
+    <text x="1132" y="304">+5 s</text>
+  </g>
+  <circle cx="672" cy="280" r="5" fill="#e2e8f0"/>
+  <circle cx="739.2" cy="280" r="5" fill="#a78bfa"/>
+  <circle cx="798" cy="280" r="5" fill="#a78bfa"/>
+  <circle cx="1036.3" cy="280" r="5" fill="#34d399"/>
+
+  <!-- saved window -->
+  <rect x="279.2" y="320" width="736" height="34" rx="8" fill="#06212f" stroke="#0ea5e9" stroke-width="1.5"/>
+  <text x="647" y="342" font-size="14" font-weight="700" fill="#7dd3fc" text-anchor="middle">saved clip: 5 s before the frame, 3 s after · 8 s · 520 messages</text>
+
+  <!-- buffer reach -->
+  <rect x="64" y="372" width="972.3" height="14" rx="4" fill="url(#tbuf)"/>
+  <line x1="84" y1="379" x2="66" y2="379" stroke="#7c89a3" stroke-width="1.6" marker-end="url(#tar)"/>
+  <text x="96" y="410" font-size="13" fill="#94a3b8">buffer when the clip is written: the last 15 s per topic (pre 5 + post 3 + max_trigger_latency 7), back to about T−11 s</text>
+</svg>

@@ -1,0 +1,143 @@
+<svg width="1280" height="680" viewBox="0 0 1280 680" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="fbg" x1="0" y1="0" x2="0" y2="680" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#101a2c"/>
+    </linearGradient>
+    <marker id="far" markerWidth="11" markerHeight="11" refX="6.5" refY="3.2" orient="auto">
+      <path d="M0,0 L7,3.2 L0,6.4 Z" fill="#7c89a3"/>
+    </marker>
+    <marker id="farV" markerWidth="11" markerHeight="11" refX="6.5" refY="3.2" orient="auto">
+      <path d="M0,0 L7,3.2 L0,6.4 Z" fill="#a78bfa"/>
+    </marker>
+    <filter id="fshadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="680" rx="20" fill="url(#fbg)"/>
+  <rect x="1" y="1" width="1278" height="678" rx="19" fill="none" stroke="#243049" stroke-width="1.5"/>
+  <text x="64" y="58" font-size="30" font-weight="800" fill="#e2e8f0">Semantic triggers: the flow</text>
+  <text x="64" y="88" font-size="16" fill="#94a3b8">Two YAML files configure two nodes on the robot, joined by one topic. Buffers keep every message; the VLM only sees a 1 Hz sample.</text>
+
+  <!-- ============ INPUTS ============ -->
+  <g filter="url(#fshadow)">
+    <rect x="64" y="136" width="220" height="104" rx="12" fill="#1d1908" stroke="#f59e0b" stroke-width="1.5"/>
+    <rect x="64" y="318" width="220" height="104" rx="12" fill="#16203a" stroke="#3b4a6b" stroke-width="1.5"/>
+    <rect x="64" y="496" width="220" height="104" rx="12" fill="#1d1908" stroke="#f59e0b" stroke-width="1.5"/>
+  </g>
+  <text x="86" y="168" font-size="15" font-weight="700" fill="#fbbf24" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace">watch_list.yaml</text>
+  <text x="86" y="194" font-size="13" fill="#cbd5e1">events in plain English,</text>
+  <text x="86" y="214" font-size="13" fill="#cbd5e1">cameras, endpoint, filters</text>
+
+  <text x="86" y="350" font-size="15" font-weight="700" fill="#cbd5e1">Robot sensors</text>
+  <text x="86" y="376" font-size="13" fill="#93a4c4">cameras (compressed)</text>
+  <text x="86" y="396" font-size="13" fill="#93a4c4">/joint_states, gripper, ...</text>
+
+  <text x="86" y="528" font-size="15" font-weight="700" fill="#fbbf24" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace">time_machine.yaml</text>
+  <text x="86" y="554" font-size="13" fill="#cbd5e1">profiles: topics, window</text>
+  <text x="86" y="574" font-size="13" fill="#cbd5e1">before/after, budgets</text>
+
+  <!-- ============ WATCHER LANE ============ -->
+  <g filter="url(#fshadow)">
+    <rect x="336" y="120" width="604" height="152" rx="14" fill="#1a1330" stroke="#a78bfa" stroke-width="1.5"/>
+  </g>
+  <rect x="336" y="120" width="6" height="152" rx="3" fill="#a78bfa"/>
+  <text x="362" y="150" font-size="16" font-weight="700" fill="#c4b5fd" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace">rtm_watcher</text>
+  <text x="920" y="150" font-size="12.5" fill="#7c6aa8" text-anchor="end">on the robot</text>
+  <g text-anchor="middle">
+    <rect x="362" y="168" width="104" height="78" rx="9" fill="#0e1626" stroke="#4c3d7a"/>
+    <text x="414" y="200" font-size="14" font-weight="700" fill="#e2e8f0">Sample</text>
+    <text x="414" y="222" font-size="12" fill="#94a3b8">1 Hz per camera</text>
+    <rect x="478" y="168" width="104" height="78" rx="9" fill="#0e1626" stroke="#4c3d7a"/>
+    <text x="530" y="200" font-size="14" font-weight="700" fill="#e2e8f0">Window</text>
+    <text x="530" y="222" font-size="12" fill="#94a3b8">last 4 frames</text>
+    <rect x="594" y="168" width="104" height="78" rx="9" fill="#0e1626" stroke="#4c3d7a"/>
+    <text x="646" y="200" font-size="14" font-weight="700" fill="#e2e8f0">Prompt</text>
+    <text x="646" y="222" font-size="12" fill="#94a3b8">rules + events</text>
+    <rect x="710" y="168" width="104" height="78" rx="9" fill="#0e1626" stroke="#4c3d7a"/>
+    <text x="762" y="200" font-size="14" font-weight="700" fill="#e2e8f0">Validate</text>
+    <text x="762" y="222" font-size="12" fill="#94a3b8">check JSON</text>
+    <rect x="826" y="168" width="98" height="78" rx="9" fill="#0e1626" stroke="#a78bfa"/>
+    <text x="875" y="200" font-size="14" font-weight="700" fill="#e2e8f0">Decide</text>
+    <text x="875" y="222" font-size="12" fill="#94a3b8">conf · cooldown</text>
+  </g>
+  <g stroke="#7c89a3" stroke-width="1.6" marker-end="url(#far)">
+    <line x1="466" y1="207" x2="474" y2="207"/>
+    <line x1="582" y1="207" x2="590" y2="207"/>
+    <line x1="698" y1="207" x2="706" y2="207"/>
+    <line x1="814" y1="207" x2="822" y2="207"/>
+  </g>
+
+  <!-- ============ VLM ============ -->
+  <g filter="url(#fshadow)">
+    <rect x="1040" y="128" width="176" height="136" rx="14" fill="#2a0f1b" stroke="#fb7185" stroke-width="1.5"/>
+  </g>
+  <text x="1128" y="164" font-size="16" font-weight="700" fill="#fda4af" text-anchor="middle">VLM server</text>
+  <text x="1128" y="190" font-size="12.5" fill="#cbd5e1" text-anchor="middle">OpenAI-compatible</text>
+  <text x="1128" y="210" font-size="12.5" fill="#cbd5e1" text-anchor="middle">vLLM · llama.cpp · Ollama</text>
+  <text x="1128" y="240" font-size="12" fill="#9f5560" text-anchor="middle">GPU box or on the robot</text>
+  <g stroke="#7c89a3" stroke-width="1.8" marker-end="url(#far)">
+    <line x1="940" y1="176" x2="1034" y2="176"/>
+    <line x1="1040" y1="228" x2="946" y2="228"/>
+  </g>
+  <g font-size="12" fill="#94a3b8" text-anchor="middle">
+    <text x="990" y="152">prompt +</text>
+    <text x="990" y="166">4 JPEGs</text>
+    <text x="990" y="248">JSON events</text>
+  </g>
+
+  <!-- ============ TIME MACHINE LANE ============ -->
+  <g filter="url(#fshadow)">
+    <rect x="336" y="452" width="880" height="190" rx="14" fill="#06212f" stroke="#0ea5e9" stroke-width="1.5"/>
+  </g>
+  <rect x="336" y="452" width="6" height="190" rx="3" fill="#0ea5e9"/>
+  <text x="362" y="482" font-size="16" font-weight="700" fill="#7dd3fc" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace">time_machine_node</text>
+  <text x="1196" y="482" font-size="12.5" fill="#3b7aa0" text-anchor="end">on the robot</text>
+  <g text-anchor="middle">
+    <rect x="362" y="500" width="210" height="84" rx="9" fill="#0e1626" stroke="#0e5f86"/>
+    <text x="467" y="534" font-size="14" font-weight="700" fill="#e2e8f0">Ring buffers</text>
+    <text x="467" y="556" font-size="12" fill="#94a3b8">every message · last 15 s</text>
+    <rect x="626" y="500" width="196" height="84" rx="9" fill="#0e1626" stroke="#a78bfa"/>
+    <text x="724" y="534" font-size="14" font-weight="700" fill="#e2e8f0">Trigger queue</text>
+    <text x="724" y="556" font-size="12" fill="#94a3b8">merge · rate limit · budget</text>
+    <rect x="876" y="500" width="150" height="84" rx="9" fill="#0e1626" stroke="#10b981"/>
+    <text x="951" y="534" font-size="14" font-weight="700" fill="#e2e8f0">Writer</text>
+    <text x="951" y="556" font-size="12" fill="#94a3b8">once window closes</text>
+    <rect x="1060" y="500" width="136" height="84" rx="9" fill="#062417" stroke="#10b981"/>
+    <text x="1128" y="534" font-size="14" font-weight="700" fill="#6ee7b7">Clip</text>
+    <text x="1128" y="556" font-size="12" fill="#a7f3d0">MCAP + event.json</text>
+  </g>
+  <g stroke="#7c89a3" stroke-width="1.8" fill="none" marker-end="url(#far)">
+    <line x1="626" y1="542" x2="578" y2="542"/>
+    <line x1="822" y1="542" x2="870" y2="542"/>
+    <line x1="1026" y1="542" x2="1054" y2="542"/>
+    <path d="M 951 584 L 951 606 L 467 606 L 467 590"/>
+  </g>
+  <g font-size="12" fill="#94a3b8" text-anchor="middle">
+    <text x="599" y="530">protect</text>
+    <text x="846" y="530">due</text>
+    <text x="709" y="626">reads every message in [start, end]</text>
+  </g>
+
+  <!-- ============ INPUT ARROWS ============ -->
+  <g stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="5 5" opacity="0.75" marker-end="url(#far)">
+    <line x1="284" y1="188" x2="330" y2="188"/>
+    <line x1="284" y1="548" x2="330" y2="548"/>
+  </g>
+  <g stroke="#7c89a3" stroke-width="1.8" fill="none" marker-end="url(#far)">
+    <path d="M 284 356 L 414 356 L 414 252"/>
+    <path d="M 284 392 L 467 392 L 467 494"/>
+  </g>
+  <g font-size="12" fill="#94a3b8">
+    <text x="300" y="348">1 Hz sample</text>
+    <text x="300" y="412">every message, full rate</text>
+  </g>
+
+  <!-- ============ THE KEY HOP ============ -->
+  <path d="M 875 246 L 875 352 L 724 352 L 724 494" stroke="#a78bfa" stroke-width="3" fill="none" marker-end="url(#farV)"/>
+  <text x="896" y="320" font-size="17" font-weight="800" fill="#c4b5fd">EventTrigger</text>
+  <text x="896" y="344" font-size="13" fill="#cbd5e1">event_stamp = when the event was <tspan font-weight="700" fill="#e2e8f0">seen</tspan>,</text>
+  <text x="896" y="363" font-size="13" fill="#cbd5e1">not when the model answered</text>
+  <text x="896" y="388" font-size="12" fill="#7c6aa8" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace">/time_machine/event_trigger</text>
+</svg>
