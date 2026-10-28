@@ -36,6 +36,10 @@ the full-rate, multi-topic clip around the moment it **happened**, not the momen
 answered. Every clip explains itself in an `event.json`.
 
 <p align="center">
+  <img src="docs/images/semantic-watching.gif" alt="Animation: one VLM watcher looks at four robots, each with a one-line description of what to watch for, and saves a clip when it sees one: a failed grasp, a near miss with a person, an operator taking over, a spill on the counter." width="720">
+</p>
+
+<p align="center">
   <img src="docs/images/semantic-yaml-to-clip.svg" alt="Left: a watch list that describes object_dropped in plain English. Right: the clip it produced, an 8 s MCAP bag plus event.json with confidence 0.95, the caption 'The red cup falls from the gripper', a detection lag of 0.64 s and pre_event_complete true." width="100%">
 </p>
 
@@ -86,6 +90,10 @@ endpoint:=... model:=...` ([how](docs/TESTING_V2_ON_UBUNTU.md#6-real-vlm-end-to-
 ### How a trigger becomes a clip
 
 <p align="center">
+  <img src="docs/images/semantic-ring-buffer.gif" alt="Animation: the robot's cameras record at full rate into a 15-second ring buffer in RAM, while the VLM watcher checks a 1 frame-per-second copy against the watch list." width="720">
+</p>
+
+<p align="center">
   <img src="docs/images/semantic-flow.svg" alt="Two YAML files configure two nodes. Sensors feed the watcher at 1 Hz and Time Machine's buffers at full rate. The watcher sends frames and a prompt to the VLM, gets JSON back, and publishes an EventTrigger that Time Machine queues, protects in its buffers and writes out as MCAP plus event.json." width="100%">
 </p>
 
@@ -95,6 +103,10 @@ naming a moment in robot time, so a scorer, an operator or an HTTP call can send
 well. **[Follow one event through all ten steps →](docs/SEMANTIC_TRIGGER_FLOW.md)**
 
 ### Why the model's latency costs nothing
+
+<p align="center">
+  <img src="docs/images/semantic-points-back.gif" alt="Animation: a block slips from the gripper at T, the VLM reports it 2.4 s later with 87% confidence, and the trigger points back to T, so the clip covers 5 s before the slip and 3 s after, with a caption." width="720">
+</p>
 
 <p align="center">
   <img src="docs/images/semantic-timeline.svg" alt="Timeline of one real drop: the cup drops at T, the frame that shows it is stamped T+0.73 s, the trigger arrives at T+1.37 s, and the clip covering T−4.27 s to T+3.73 s is written at T+3.96 s." width="100%">
