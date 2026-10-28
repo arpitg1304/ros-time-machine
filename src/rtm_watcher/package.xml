@@ -7,14 +7,15 @@
   <maintainer email="arpit.wpi@gmail.com">agog13</maintainer>
   <license>Apache-2.0</license>
 
-  <buildtool_depend>ament_python</buildtool_depend>
-
   <depend>rclpy</depend>
   <depend>builtin_interfaces</depend>
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>ros_time_machine_msgs</depend>
   <exec_depend>rosidl_runtime_py</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <!-- quickstart and demo.launch.py start time_machine_node -->
+  <exec_depend>ros_time_machine</exec_depend>
   <exec_depend>python3-yaml</exec_depend>
   <!-- Optional: downscaling and raw Image support (either one) -->
   <exec_depend>python3-opencv</exec_depend>

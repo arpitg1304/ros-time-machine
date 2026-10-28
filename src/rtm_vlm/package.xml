@@ -7,8 +7,6 @@
   <maintainer email="arpit.wpi@gmail.com">agog13</maintainer>
   <license>Apache-2.0</license>
 
-  <buildtool_depend>ament_python</buildtool_depend>
-
   <exec_depend>rtm_watcher</exec_depend>
   <exec_depend>ros_time_machine</exec_depend>
   <exec_depend>python3-yaml</exec_depend>

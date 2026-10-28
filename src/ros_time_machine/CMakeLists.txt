@@ -1,6 +1,28 @@
 cmake_minimum_required(VERSION 3.8)
 project(ros_time_machine)
 
+# Run the Python launch tests with the interpreter ROS itself uses, even when pyenv, conda
+# or uv put another python3 first on PATH (same block as in ros_time_machine_msgs).
+# Pass -DPython3_EXECUTABLE=... to choose one yourself.
+if(NOT DEFINED Python3_EXECUTABLE)
+  string(REPLACE ":" ";" _rtm_prefixes "$ENV{AMENT_PREFIX_PATH}")
+  foreach(_rtm_prefix IN LISTS _rtm_prefixes)
+    file(GLOB _rtm_rclpy "${_rtm_prefix}/lib/python3.*/site-packages/rclpy")
+    if(_rtm_rclpy)
+      list(GET _rtm_rclpy 0 _rtm_rclpy)
+      string(REGEX MATCH "python3\\.[0-9]+" _rtm_python_name "${_rtm_rclpy}")
+      # RoboStack/conda installs ROS into the environment root; apt installs use /usr/bin
+      find_program(_rtm_python NAMES ${_rtm_python_name}
+        PATHS "${_rtm_prefix}/bin" /usr/bin /usr/local/bin NO_DEFAULT_PATH)
+      if(_rtm_python)
+        set(Python3_EXECUTABLE "${_rtm_python}" CACHE FILEPATH "Python used by ROS")
+        message(STATUS "Using ROS's Python: ${_rtm_python}")
+      endif()
+      break()
+    endif()
+  endforeach()
+endif()
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()

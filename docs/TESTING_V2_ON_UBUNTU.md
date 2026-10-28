@@ -28,16 +28,13 @@ sudo rosdep init 2>/dev/null; rosdep update
 rosdep install --from-paths src --ignore-src -y     # mcap storage plugin, opencv, ...
 ```
 
-If pyenv, conda or uv puts another Python first on `PATH`, ROS Jazzy (built for the system
-Python 3.12) breaks: `import rclpy` fails, or CMake picks the wrong interpreter. Use the
-system one in this workspace (`pyenv local system`, `conda deactivate`) and check that
-`python3 -c "import rclpy"` works.
+pyenv, conda or uv first on `PATH` is fine: the build uses the Python ROS was built for and
+logs `Using ROS's Python: ...`. Override it with `--cmake-args -DPython3_EXECUTABLE=...`.
 
 ## 2. Build
 
 ```bash
-colcon build --symlink-install --cmake-args -DPython3_EXECUTABLE=/usr/bin/python3 \
-    2>&1 | tee /tmp/rtm_build.log
+colcon build --symlink-install 2>&1 | tee /tmp/rtm_build.log
 source install/setup.bash
 ```
 
