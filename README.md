@@ -3,6 +3,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/arpitg1304/ros-time-machine/actions/workflows/ci.yml"><img src="https://github.com/arpitg1304/ros-time-machine/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-3b82f6.svg" alt="License: Apache 2.0"></a>
   <img src="https://img.shields.io/badge/ROS_2-Jazzy-22a7f0.svg" alt="ROS 2 Jazzy">
   <img src="https://img.shields.io/badge/C%2B%2B-17-a78bfa.svg" alt="C++17">
@@ -79,7 +80,7 @@ ros2 run rtm_watcher quickstart --vlm http://127.0.0.1:8000/v1 --model qwen3-vl-
 ```bash
 export GEMINI_API_KEY=...
 ros2 run rtm_watcher quickstart --allow-remote --api-key-env GEMINI_API_KEY \
-    --vlm https://generativelanguage.googleapis.com/v1beta/openai --model <a Flash-Lite model id>
+    --vlm https://generativelanguage.googleapis.com/v1beta/openai --model gemini-3.5-flash-lite
 ```
 
 **On a Jetson or Apple Silicon**, `ros2 launch rtm_vlm semantic_stack.launch.py` picks a

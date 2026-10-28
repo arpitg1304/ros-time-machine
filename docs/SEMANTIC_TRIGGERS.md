@@ -426,8 +426,8 @@ Implemented so far, mapped to the v2 plan:
 | Phase 1: `PinRange` / `ReleasePin`, TTL, pin budget | Done |
 | Phase 1: warm tier on disk | Not yet |
 | Phase 2: watcher, prompt builder, client, validation, cooldowns | Done, plus a fake VLM and a no-GPU demo |
-| Phase 2: latency benchmark | Lag is recorded per clip and summarized by `review stats`; the benchmark run itself is still to do |
+| Phase 2: latency benchmark | Done: `vlm bench` and `deploy/vllm/check.sh`; Qwen3-VL-4B FP8 on an RTX 4070 Ti SUPER answers in 0.23 s (warm p50) |
 | Phase 3: scorer contract, conformal calibration, effort scorer | Done; frame-difference scorer and random baseline clips not yet |
 | Phase 4: review loop, precision per label | Done as a CLI (no web UI yet) |
-| Evaluation metrics (recall, precision, lag, pre-event coverage) | `review eval`; the labelled dataset itself is still to record |
+| Evaluation metrics (recall, precision, lag, pre-event coverage) | `review eval`; measured on the demo (recall 1.0, lag p50 1.37 s); a labelled real-robot dataset is still to record |
 | Phase 4: distillation, LeRobot exporter | Not yet |

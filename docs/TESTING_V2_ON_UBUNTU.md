@@ -39,8 +39,8 @@ source install/setup.bash
 ```
 
 All five packages should finish: `ros_time_machine_msgs`, `ros_time_machine`,
-`ros_time_machine_rest_bridge`, `rtm_watcher`, `rtm_vlm`. This is the first time the v2 C++
-compiles on ROS; if it fails, `/tmp/rtm_build.log` is what to send.
+`ros_time_machine_rest_bridge`, `rtm_watcher`, `rtm_vlm`. If it fails, `/tmp/rtm_build.log`
+is what to send.
 
 ## 3. Tests
 
