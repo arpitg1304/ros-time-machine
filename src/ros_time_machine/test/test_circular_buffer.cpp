@@ -442,6 +442,115 @@ TEST(CircularBufferTypesTest, StructType)
   EXPECT_TRUE(result[1].data == d2);
 }
 
+// Eviction guard (pins) tests
+class PinnedBufferTest : public ::testing::Test
+{
+protected:
+  using Buffer = CircularBuffer<int>;
+
+  // Element i is stamped i seconds after a fixed epoch
+  static Buffer::TimePoint at(int seconds_after_epoch)
+  {
+    return Buffer::TimePoint(seconds(seconds_after_epoch));
+  }
+
+  void fill(Buffer & buffer, int first, int last)
+  {
+    for (int i = first; i <= last; ++i) {
+      buffer.push(at(i), i);
+    }
+  }
+};
+
+TEST_F(PinnedBufferTest, NoGuardBehavesLikeV1)
+{
+  Buffer buffer(5);
+  fill(buffer, 0, 9);
+  EXPECT_EQ(buffer.size(), 5u);
+  EXPECT_EQ(buffer.retainedCount(), 0u);
+  EXPECT_EQ(buffer.droppedCount(), 5u);
+  EXPECT_EQ(buffer.oldestTimestamp(), at(5));
+}
+
+TEST_F(PinnedBufferTest, GuardedElementsSurviveEviction)
+{
+  Buffer buffer(5);
+  buffer.setEvictionGuard(
+    [](const Buffer::TimePoint & t) {return t >= at(1) && t <= at(3);}, 10);
+  fill(buffer, 0, 9);
+
+  EXPECT_EQ(buffer.size(), 5u);
+  EXPECT_EQ(buffer.retainedCount(), 3u);
+  EXPECT_EQ(buffer.droppedCount(), 2u);  // 0 and 4 were not protected
+  EXPECT_EQ(buffer.oldestTimestamp(), at(1));
+
+  auto result = buffer.getRange(at(0), at(9));
+  ASSERT_EQ(result.size(), 8u);
+  std::vector<int> values;
+  for (const auto & elem : result) {
+    values.push_back(elem.data);
+  }
+  EXPECT_EQ(values, (std::vector<int>{1, 2, 3, 5, 6, 7, 8, 9}));
+}
+
+TEST_F(PinnedBufferTest, PruneReleasesUncoveredElements)
+{
+  Buffer buffer(5);
+  bool pinned = true;
+  buffer.setEvictionGuard(
+    [&pinned](const Buffer::TimePoint & t) {return pinned && t <= at(2);}, 10);
+  fill(buffer, 0, 9);
+  EXPECT_EQ(buffer.retainedCount(), 3u);
+
+  EXPECT_EQ(buffer.pruneRetained(), 0u);  // Still pinned
+  pinned = false;
+  EXPECT_EQ(buffer.pruneRetained(), 3u);
+  EXPECT_EQ(buffer.retainedCount(), 0u);
+  EXPECT_EQ(buffer.getRange(at(0), at(9)).size(), 5u);
+}
+
+TEST_F(PinnedBufferTest, RetainedStoreRespectsBudget)
+{
+  Buffer buffer(4);
+  buffer.setEvictionGuard([](const Buffer::TimePoint &) {return true;}, 2);
+  fill(buffer, 0, 9);
+
+  // 6 evictions, budget of 2: the newest two protected elements are kept
+  EXPECT_EQ(buffer.retainedCount(), 2u);
+  EXPECT_EQ(buffer.retainedDroppedCount(), 4u);
+  EXPECT_EQ(buffer.oldestTimestamp(), at(4));
+}
+
+TEST_F(PinnedBufferTest, ZeroBudgetDisablesRetention)
+{
+  Buffer buffer(3);
+  buffer.setEvictionGuard([](const Buffer::TimePoint &) {return true;}, 0);
+  fill(buffer, 0, 5);
+  EXPECT_EQ(buffer.retainedCount(), 0u);
+  EXPECT_EQ(buffer.droppedCount(), 3u);
+}
+
+TEST_F(PinnedBufferTest, ClearDropsRetained)
+{
+  Buffer buffer(2);
+  buffer.setEvictionGuard([](const Buffer::TimePoint &) {return true;}, 5);
+  fill(buffer, 0, 4);
+  buffer.clear();
+  EXPECT_EQ(buffer.retainedCount(), 0u);
+  EXPECT_TRUE(buffer.getRange(at(0), at(9)).empty());
+}
+
+TEST_F(PinnedBufferTest, GetRecentWithExplicitNow)
+{
+  // Sim-time style stamps near the epoch; wall-clock now() would miss them all
+  Buffer buffer(10);
+  fill(buffer, 0, 9);
+  auto recent = buffer.getRecent(duration<double>(3.0), at(9));
+  ASSERT_EQ(recent.size(), 4u);
+  EXPECT_EQ(recent.front().data, 6);
+  EXPECT_TRUE(buffer.getRecent(duration<double>(3.0)).empty());
+}
+
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
