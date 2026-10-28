@@ -42,6 +42,12 @@ def generate_launch_description():
         description='Log level (debug, info, warn, error, fatal)'
     )
 
+    use_sim_time_arg = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use /clock (bag replay with --clock, simulation)'
+    )
+
     # Time Machine node
     time_machine_node = Node(
         package='ros_time_machine',
@@ -50,6 +56,7 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'config_file': LaunchConfiguration('config_file'),
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
         }],
         arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')],
     )
@@ -57,5 +64,6 @@ def generate_launch_description():
     return LaunchDescription([
         config_file_arg,
         log_level_arg,
+        use_sim_time_arg,
         time_machine_node,
     ])
