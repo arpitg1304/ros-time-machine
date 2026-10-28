@@ -15,9 +15,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from builtin_interfaces.msg import Time as TimeMsg
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool
+
+try:
+    from ros_time_machine_msgs.msg import EventTrigger
+except ImportError:  # Older installs without v2 messages: /api/events is disabled
+    EventTrigger = None
 
 try:
     from fastapi import FastAPI, HTTPException
@@ -41,6 +47,18 @@ class TriggerResponse(BaseModel):
     snapshot_id: str
     message: str
     timestamp: str
+
+
+class EventRequest(BaseModel):
+    """Time-addressed trigger: save the data around a moment, not around 'now'"""
+    label: str = "human_report"
+    description: Optional[str] = ""
+    profile: Optional[str] = ""          # Snapshot profile; "" = default
+    seconds_ago: float = 0.0             # The event happened this long before the request
+    pre_event: Optional[float] = None    # Override the profile's window (seconds)
+    post_event: Optional[float] = None
+    confidence: float = 1.0
+    tags: Optional[List[str]] = None
 
 
 class SnapshotMetadata(BaseModel):
@@ -76,6 +94,15 @@ class RestBridgeNode(Node):
             self.trigger_topic,
             10
         )
+
+        self.declare_parameter('event_trigger_topic', '/time_machine/event_trigger')
+        self.event_publisher = None
+        if EventTrigger is not None:
+            self.event_publisher = self.create_publisher(
+                EventTrigger,
+                self.get_parameter('event_trigger_topic').value,
+                10
+            )
 
         # Snapshot tracking
         self.snapshots: Dict[str, SnapshotMetadata] = {}
@@ -123,6 +150,33 @@ class RestBridgeNode(Node):
 
         return snapshot_meta
 
+    def send_event(self, request: EventRequest) -> int:
+        """Publish a time-addressed EventTrigger; returns the event stamp (ns)"""
+        if self.event_publisher is None:
+            raise RuntimeError('ros_time_machine_msgs v2 (EventTrigger) is not installed')
+
+        def to_msg(ns: int) -> TimeMsg:
+            ns = max(int(ns), 0)
+            return TimeMsg(sec=ns // 1_000_000_000, nanosec=ns % 1_000_000_000)
+
+        event_ns = self.get_clock().now().nanoseconds - int(request.seconds_ago * 1e9)
+        msg = EventTrigger()
+        msg.event_stamp = to_msg(event_ns)
+        if request.pre_event is not None:
+            msg.start = to_msg(event_ns - int(request.pre_event * 1e9))
+        if request.post_event is not None:
+            msg.end = to_msg(event_ns + int(request.post_event * 1e9))
+        msg.profile = request.profile or ''
+        msg.label = request.label
+        msg.description = request.description or ''
+        msg.confidence = float(request.confidence)
+        msg.source = 'human:rest_api'
+        msg.tags = list(request.tags or [])
+        self.event_publisher.publish(msg)
+        self.get_logger().info(
+            f'Event {request.label} published ({request.seconds_ago:.1f}s ago)')
+        return event_ns
+
     def list_snapshots(self) -> List[SnapshotMetadata]:
         """Get list of all snapshots"""
         return list(self.snapshots.values())
@@ -151,6 +205,7 @@ async def root():
         "endpoints": {
             "health": "/health",
             "trigger": "POST /api/snapshots/trigger",
+            "event": "POST /api/events",
             "list": "GET /api/snapshots",
             "get": "GET /api/snapshots/{snapshot_id}"
         }
@@ -195,6 +250,28 @@ async def trigger_snapshot(request: TriggerRequest):
     except Exception as e:
         ros_node.get_logger().error(f'Failed to trigger snapshot: {e}')
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/events")
+async def send_event(request: EventRequest):
+    """
+    Report something that already happened; Time Machine saves the window around it
+
+    Example:
+        curl -X POST http://localhost:8080/api/events \\
+             -H "Content-Type: application/json" \\
+             -d '{"label": "near_miss", "seconds_ago": 5, "description": "cart cut in"}'
+    """
+    if ros_node is None:
+        raise HTTPException(status_code=500, detail="ROS node not initialized")
+    if request.seconds_ago < 0:
+        raise HTTPException(status_code=422, detail="seconds_ago cannot be negative")
+
+    try:
+        event_ns = ros_node.send_event(request)
+    except RuntimeError as e:
+        raise HTTPException(status_code=501, detail=str(e))
+    return {"success": True, "label": request.label, "event_stamp_ns": event_ns}
 
 
 @app.get("/api/snapshots", response_model=List[SnapshotMetadata])

@@ -12,6 +12,8 @@
 
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
+  <depend>builtin_interfaces</depend>
+  <depend>ros_time_machine_msgs</depend>
 
   <exec_depend>python3-fastapi</exec_depend>
   <exec_depend>python3-uvicorn</exec_depend>
