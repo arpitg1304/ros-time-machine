@@ -1,10 +1,12 @@
 """Static checks for the vLLM deploy kit; runs anywhere (no Docker or GPU needed)."""
 
+import functools
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 import pytest
 import yaml
@@ -31,13 +33,24 @@ def read_env(name):
     return lines[0], values
 
 
+@functools.lru_cache(maxsize=None)
+def clean_kit():
+    """A copy of the kit without the developer's own .env, which serve.sh would load."""
+    path = tempfile.mkdtemp(prefix='rtm-vllm-kit-')
+    for name in ('serve.sh', 'compose.yaml'):
+        shutil.copy2(os.path.join(KIT, name), path)
+    shutil.copytree(os.path.join(KIT, 'profiles'), os.path.join(path, 'profiles'))
+    return path
+
+
 def run(*args, env=None):
     full_env = dict(os.environ, HOME='/home/robot', **(env or {}))
     for key in ('VLLM_API_KEY', 'VLLM_PORT', 'VLLM_BIND'):
         if not env or key not in env:
             full_env.pop(key, None)
-    return subprocess.run(['bash', os.path.join(KIT, 'serve.sh'), *args],
-                          capture_output=True, text=True, env=full_env, cwd=KIT)
+    kit = clean_kit()
+    return subprocess.run(['bash', os.path.join(kit, 'serve.sh'), *args],
+                          capture_output=True, text=True, env=full_env, cwd=kit)
 
 
 @pytest.mark.parametrize('name', PROFILE_FILES)

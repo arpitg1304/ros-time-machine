@@ -42,8 +42,9 @@ case "$ACTION" in
       printf '%-20s %s\n' "$(basename "$f" .env)" "$(sed -n 's/^# //p' "$f" | head -n 1)"
     done
     exit 0 ;;
-  stop) compose down; exit 0 ;;
-  logs) compose logs -f --tail 100; exit 0 ;;
+  # Compose interpolates the whole file even for down/logs, which don't need a model
+  stop) MODEL="${MODEL:-none}" compose down; exit 0 ;;
+  logs) MODEL="${MODEL:-none}" compose logs -f --tail 100; exit 0 ;;
 esac
 
 PROFILE_FILE="$HERE/profiles/$PROFILE.env"
