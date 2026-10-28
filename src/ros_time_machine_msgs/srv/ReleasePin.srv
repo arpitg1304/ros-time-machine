@@ -1,0 +1,15 @@
+# Resolve a pin created with PinRange.
+
+uint64 pin_id
+
+# true = convert the pinned range into a snapshot, false = drop it
+bool keep
+
+# Optional metadata recorded in the sidecar when keep = true
+string label
+string description
+float32 confidence
+string source
+---
+bool success
+string message

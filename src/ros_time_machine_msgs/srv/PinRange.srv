@@ -1,0 +1,21 @@
+# Protect a buffer range from eviction while a slower judge decides whether to keep it.
+
+# Range to protect, in robot ROS time
+builtin_interfaces/Time start
+builtin_interfaces/Time end
+
+# Snapshot profile to use if the pin is kept. "" = first configured snapshot.
+string profile
+
+# Auto-resolve after this many seconds if no decision arrives (profile's pin_timeout_policy)
+float32 ttl_seconds
+
+string reason
+---
+bool success
+uint64 pin_id
+
+# Earliest data actually still held for the requested range
+builtin_interfaces/Time clamped_start
+
+string message

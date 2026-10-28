@@ -15,9 +15,12 @@ find_package(builtin_interfaces REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RecordingStatus.msg"
   "msg/BufferStats.msg"
+  "msg/EventTrigger.msg"
   "srv/TriggerSnapshot.srv"
   "srv/GetStatus.srv"
   "srv/ListSnapshots.srv"
+  "srv/PinRange.srv"
+  "srv/ReleasePin.srv"
   DEPENDENCIES std_msgs builtin_interfaces
 )
 
