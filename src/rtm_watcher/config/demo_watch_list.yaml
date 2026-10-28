@@ -10,7 +10,8 @@ watcher:
   sample_hz: 1.0
   context_frames: 4
   robot_context: "A robot arm with a two-finger gripper holds a red cup above a table."
-  cooldown_s: 10                   # the cup stays on the floor ~8 s after each drop
+  cooldown_s: 5                    # short, so a false alarm can't hide the next real drop;
+                                   # the cup lies on the floor ~8 s, so expect repeat clips
   events:
     - label: object_dropped
       describe: "An object falls out of the gripper or off the table."
