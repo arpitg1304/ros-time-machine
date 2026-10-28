@@ -1,0 +1,21 @@
+# Watch list for `ros2 launch rtm_vlm semantic_stack.launch.py`.
+# The launch serves the local model under the name "local-vlm" on port 8000,
+# whichever model `vlm` picked for this device. Edit cameras and events.
+watcher:
+  endpoint: http://127.0.0.1:8000/v1
+  model: local-vlm
+  request_timeout_s: 30        # the first calls run while the model warms up
+  cameras: [/camera/front/image_raw/compressed]
+  sample_hz: 1.0
+  context_frames: 4
+  max_image_px: 640
+  state_topics: [/joint_states]
+  min_confidence: 0.6
+  cooldown_s: 10
+  events:
+    - label: object_dropped
+      describe: "An object falls out of the gripper or off the table."
+      profile: manipulation
+    - label: person_in_cell
+      describe: "A person enters the robot's work area."
+      profile: safety

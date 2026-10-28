@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>rtm_vlm</name>
+  <version>0.2.0</version>
+  <description>Optional: run a local vision-language model sized to the device (llama.cpp, Ollama, vLLM) for ROS Time Machine semantic triggers, and benchmark any VLM endpoint with watcher-shaped requests</description>
+  <maintainer email="arpit.wpi@gmail.com">agog13</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rtm_watcher</exec_depend>
+  <exec_depend>ros_time_machine</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <!-- The VLM runtime itself (llama-server, ollama or vllm) is installed separately:
+       `ros2 run rtm_vlm vlm doctor` says what this machine needs. -->
+
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
