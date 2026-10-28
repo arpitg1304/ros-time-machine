@@ -67,8 +67,16 @@ bool TriggerMonitor::initialize(
 
   // Create trigger subscriptions for each snapshot
   size_t subscribed_count = 0;
+  size_t rule_count = 0;
   for (const auto & snapshot : config.snapshots) {
     const std::string & topic_name = snapshot.trigger.topic;
+
+    if (!snapshot.trigger.enabled()) {
+      RCLCPP_INFO(logger_, "Snapshot '%s' has no rule trigger (EventTrigger / service only)",
+                  snapshot.name.c_str());
+      continue;
+    }
+    rule_count++;
 
     RCLCPP_INFO(logger_, "Setting up trigger for snapshot '%s' on topic %s",
                 snapshot.name.c_str(), topic_name.c_str());
@@ -130,9 +138,9 @@ bool TriggerMonitor::initialize(
 
   initialized_ = true;
   RCLCPP_INFO(logger_, "Trigger Monitor initialized: %zu/%zu triggers active",
-              subscribed_count, config.snapshots.size());
+              subscribed_count, rule_count);
 
-  if (subscribed_count == 0) {
+  if (subscribed_count == 0 && rule_count > 0) {
     RCLCPP_WARN(logger_, "No trigger topics are currently available");
   }
 
@@ -361,6 +369,10 @@ void TriggerMonitor::discoveryTimerCallback()
   // Check each snapshot's trigger topic
   for (const auto & snapshot : config_.snapshots) {
     const std::string & topic_name = snapshot.trigger.topic;
+
+    if (!snapshot.trigger.enabled()) {
+      continue;
+    }
 
     // Skip if we already have a subscription for this snapshot
     if (triggers_.find(snapshot.name) != triggers_.end() &&

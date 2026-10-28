@@ -1,0 +1,21 @@
+# Config for `ros2 launch rtm_watcher demo.launch.py`: fake sensors + fake VLM, no GPU.
+snapshots:
+  - name: "manipulation"
+    description: "Demo: VLM-triggered clips"
+    recording:
+      topics: ["/camera/front/image_raw/compressed", "/joint_states"]
+      pre_event_duration: 5.0
+      post_event_duration: 3.0
+      max_buffer_size: 100
+    rate_limit:
+      max_triggers_per_minute: 20
+    output:
+      path: "/tmp/ros_time_machine/demo"
+      name_pattern: "{label}_{timestamp}"
+
+global:
+  recording_threads: 1
+  publish_stats: true
+  max_trigger_latency: 7.0
+  robot:
+    id: "demo-bot"

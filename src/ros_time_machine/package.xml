@@ -11,9 +11,15 @@
 
   <depend>rclcpp</depend>
   <depend>rosbag2_cpp</depend>
+  <depend>rosbag2_storage</depend>
+  <!-- output.format plugins: mcap is a separate package on Humble -->
+  <exec_depend>rosbag2_storage_mcap</exec_depend>
+  <exec_depend>rosbag2_storage_default_plugins</exec_depend>
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>yaml-cpp</depend>
+  <depend>builtin_interfaces</depend>
+  <depend>ros_time_machine_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

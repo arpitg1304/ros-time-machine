@@ -1,0 +1,91 @@
+# ROS Time Machine v2 - semantic triggers
+#
+# Snapshots are "profiles": which topics to save, how far around the event, and
+# where. A profile may have a rule trigger (v1 style) or none at all, in which
+# case it fires only from time-addressed EventTrigger messages (VLM watcher,
+# scorers, humans), pins, or the ~/trigger_snapshot service.
+
+snapshots:
+  # Fired by the VLM watcher ("object_dropped", "wrong_object")
+  - name: "manipulation"
+    description: "Manipulation failures spotted by the VLM watcher"
+    recording:
+      topics:
+        - "/camera/front/image_raw/compressed"
+        - "/camera/wrist/image_raw/compressed"
+        - "/joint_states"
+        - "/gripper/state"
+      pre_event_duration: 5.0
+      post_event_duration: 3.0
+      max_buffer_size: 500
+    rate_limit:
+      max_triggers_per_minute: 6
+    pins:
+      timeout_policy: "drop"      # curiosity profile: no decision, no clip
+      default_ttl: 20.0
+    output:
+      path: "/tmp/ros_time_machine/clips"
+      name_pattern: "{label}_{timestamp}"
+      format: "mcap"
+
+  # Rule trigger AND watcher events ("person_in_cell") share this profile
+  - name: "safety"
+    description: "E-stops and people in the work cell"
+    trigger:
+      topic: "/emergency_stop"
+      msg_type: "std_msgs/msg/Bool"
+      condition:
+        field: "data"
+        operator: "=="
+        value: true
+    recording:
+      topics:
+        - "/camera/front/image_raw/compressed"
+        - "/joint_states"
+      pre_event_duration: 10.0
+      post_event_duration: 5.0
+      max_buffer_size: 500
+    rate_limit:
+      max_triggers_per_minute: 10
+    pins:
+      timeout_policy: "keep"      # safety-critical: when in doubt, save it
+    output:
+      path: "/tmp/ros_time_machine/clips"
+      name_pattern: "{label}_{timestamp}"
+
+  # Long windows for training episodes ("task_success" sets its own window)
+  - name: "episodes"
+    description: "Successful episodes, sampled"
+    recording:
+      topics:
+        - "/camera/front/image_raw/compressed"
+        - "/camera/wrist/image_raw/compressed"
+        - "/joint_states"
+      pre_event_duration: 20.0
+      post_event_duration: 2.0
+      max_buffer_size: 1000
+    output:
+      path: "/tmp/ros_time_machine/episodes"
+      name_pattern: "{label}_{timestamp}"
+
+global:
+  max_total_buffer_memory: 4000
+  recording_threads: 2
+  log_level: "INFO"
+  publish_stats: true
+  stats_publish_rate: 1.0
+
+  # Time-addressed triggers
+  event_trigger_topic: "/time_machine/event_trigger"
+  max_trigger_latency: 7.0        # worst-case VLM detection lag; added to every buffer
+  write_settle_time: 0.2
+  pin_budget_fraction: 0.25       # pins may hold up to 25% of a buffer past eviction
+
+  budget:
+    max_clips_per_hour: 120       # across all profiles
+    merge_gap: 1.0                # one clip for events closer than this
+    max_clip_duration: 120
+
+  robot:                          # copied into every event.json
+    id: "so101-01"
+    policy_version: "act-v3"

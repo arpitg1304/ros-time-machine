@@ -15,6 +15,8 @@
 #ifndef ROS_TIME_MACHINE__CONFIG_TYPES_HPP_
 #define ROS_TIME_MACHINE__CONFIG_TYPES_HPP_
 
+#include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 #include <memory>
@@ -55,6 +57,9 @@ struct TriggerCondition
 
 /**
  * @brief Trigger configuration
+ *
+ * Optional: a snapshot without a trigger is a "profile" that only fires from
+ * time-addressed EventTrigger messages, pins and the TriggerSnapshot service.
  */
 struct TriggerConfig
 {
@@ -64,6 +69,8 @@ struct TriggerConfig
 
   TriggerConfig()
     : topic(""), msg_type("") {}
+
+  bool enabled() const {return !topic.empty();}
 };
 
 /**
@@ -99,13 +106,26 @@ struct RateLimitConfig
 struct OutputConfig
 {
   std::string path;                    // Output directory path
-  std::string name_pattern;            // Filename pattern (supports {snapshot_name}, {timestamp})
+  std::string name_pattern;            // Filename pattern ({snapshot_name}, {timestamp}, {label})
   std::string format;                  // Rosbag format ("mcap" or "sqlite3")
 
   OutputConfig()
     : path("/tmp/ros_time_machine"),
       name_pattern("{snapshot_name}_{timestamp}"),
       format("mcap") {}
+};
+
+/**
+ * @brief What happens to a pin of this profile when nobody decides in time
+ */
+struct PinConfig
+{
+  bool keep_on_timeout;                // true for safety-critical profiles
+  double default_ttl;                  // Seconds, used when PinRange gives ttl <= 0
+
+  PinConfig()
+    : keep_on_timeout(false),
+      default_ttl(30.0) {}
 };
 
 /**
@@ -119,6 +139,7 @@ struct SnapshotConfig
   RecordingConfig recording;           // Recording configuration
   RateLimitConfig rate_limit;          // Rate limiting configuration
   OutputConfig output;                 // Output configuration
+  PinConfig pins;                      // Pin timeout policy
 
   SnapshotConfig()
     : name(""), description("") {}
@@ -135,12 +156,36 @@ struct GlobalConfig
   bool publish_stats;                  // Enable statistics publishing
   double stats_publish_rate;           // Statistics publish rate (Hz)
 
+  // Time-addressed triggers
+  std::string event_trigger_topic;     // EventTrigger subscription
+  double max_trigger_latency;          // Extra buffer seconds for slow detectors (VLM lag)
+  double write_settle_time;            // Wait past window end for in-flight messages (s)
+
+  // Trigger budgets
+  uint32_t max_clips_per_hour;         // Across all snapshots; 0 = unlimited
+  double merge_gap;                    // Merge windows of one snapshot closer than this (s)
+  double max_clip_duration;            // Never grow a merged clip past this (s)
+
+  // Pins
+  double pin_budget_fraction;          // Share of each topic buffer pins may hold past eviction
+
+  // Written into every event.json
+  std::string robot_id;
+  std::map<std::string, std::string> metadata;
+
   GlobalConfig()
     : max_total_buffer_memory(2000),
       recording_threads(4),
       log_level("INFO"),
       publish_stats(true),
-      stats_publish_rate(1.0) {}
+      stats_publish_rate(1.0),
+      event_trigger_topic("/time_machine/event_trigger"),
+      max_trigger_latency(0.0),
+      write_settle_time(0.2),
+      max_clips_per_hour(0),
+      merge_gap(0.0),
+      max_clip_duration(300.0),
+      pin_budget_fraction(0.25) {}
 };
 
 /**

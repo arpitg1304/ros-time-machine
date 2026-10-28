@@ -368,6 +368,149 @@ global:
   fs::remove(temp_config);
 }
 
+// v2: time-addressed triggers, pins, budgets
+namespace
+{
+// Writes yaml to a temp file and loads it; returns the manager for inspection
+std::unique_ptr<ConfigManager> loadYaml(const std::string & name, const std::string & yaml)
+{
+  fs::path temp_config = fs::temp_directory_path() / (name + ".yaml");
+  {
+    std::ofstream ofs(temp_config);
+    ofs << yaml;
+  }
+  auto manager = std::make_unique<ConfigManager>(rclcpp::get_logger(name));
+  try {
+    manager->loadFromFile(temp_config.string());
+  } catch (...) {
+    fs::remove(temp_config);
+    throw;
+  }
+  fs::remove(temp_config);
+  return manager;
+}
+
+const char * kV2Config = R"(
+snapshots:
+  - name: "manipulation"
+    description: "VLM-triggered manipulation events"
+    recording:
+      topics: ["/camera/front/image_raw/compressed", "/joint_states"]
+      pre_event_duration: 5.0
+      post_event_duration: 3.0
+    pins:
+      timeout_policy: "drop"
+  - name: "safety"
+    trigger:
+      topic: "/estop"
+      msg_type: "std_msgs/msg/Bool"
+      condition: {field: "data", operator: "==", value: true}
+    recording:
+      topics: ["/joint_states"]
+      pre_event_duration: 5.0
+      post_event_duration: 5.0
+    pins:
+      timeout_policy: "keep"
+      default_ttl: 12.5
+    output:
+      name_pattern: "{label}_{timestamp}"
+
+global:
+  event_trigger_topic: "/rtm/events"
+  max_trigger_latency: 7.0
+  write_settle_time: 0.5
+  pin_budget_fraction: 0.4
+  budget:
+    max_clips_per_hour: 60
+    merge_gap: 1.5
+    max_clip_duration: 90
+  robot:
+    id: "pip-01"
+    policy_version: "diffusion-v12"
+)";
+}  // namespace
+
+TEST(ConfigManagerV2Test, SnapshotWithoutTriggerIsAProfile)
+{
+  auto manager = loadYaml("v2_profiles", kV2Config);
+  const auto * manipulation = manager->getSnapshot("manipulation");
+  ASSERT_NE(manipulation, nullptr);
+  EXPECT_FALSE(manipulation->trigger.enabled());
+  const auto * safety = manager->getSnapshot("safety");
+  ASSERT_NE(safety, nullptr);
+  EXPECT_TRUE(safety->trigger.enabled());
+}
+
+TEST(ConfigManagerV2Test, PinPolicyParsed)
+{
+  auto manager = loadYaml("v2_pins", kV2Config);
+  const auto * manipulation = manager->getSnapshot("manipulation");
+  const auto * safety = manager->getSnapshot("safety");
+  EXPECT_FALSE(manipulation->pins.keep_on_timeout);
+  EXPECT_DOUBLE_EQ(manipulation->pins.default_ttl, 30.0);
+  EXPECT_TRUE(safety->pins.keep_on_timeout);
+  EXPECT_DOUBLE_EQ(safety->pins.default_ttl, 12.5);
+  EXPECT_EQ(safety->output.name_pattern, "{label}_{timestamp}");
+}
+
+TEST(ConfigManagerV2Test, GlobalTriggerSettingsParsed)
+{
+  auto manager = loadYaml("v2_global", kV2Config);
+  const auto & global = manager->getConfig().global;
+  EXPECT_EQ(global.event_trigger_topic, "/rtm/events");
+  EXPECT_DOUBLE_EQ(global.max_trigger_latency, 7.0);
+  EXPECT_DOUBLE_EQ(global.write_settle_time, 0.5);
+  EXPECT_DOUBLE_EQ(global.pin_budget_fraction, 0.4);
+  EXPECT_EQ(global.max_clips_per_hour, 60u);
+  EXPECT_DOUBLE_EQ(global.merge_gap, 1.5);
+  EXPECT_DOUBLE_EQ(global.max_clip_duration, 90.0);
+  EXPECT_EQ(global.robot_id, "pip-01");
+  ASSERT_EQ(global.metadata.count("policy_version"), 1u);
+  EXPECT_EQ(global.metadata.at("policy_version"), "diffusion-v12");
+}
+
+TEST(ConfigManagerV2Test, V1ConfigGetsV2Defaults)
+{
+  ConfigManager manager(rclcpp::get_logger("v2_defaults"));
+  fs::path config = fs::path(__FILE__).parent_path() / "test_config.yaml";
+  manager.loadFromFile(config.string());
+  const auto & global = manager.getConfig().global;
+  EXPECT_EQ(global.event_trigger_topic, "/time_machine/event_trigger");
+  EXPECT_DOUBLE_EQ(global.max_trigger_latency, 0.0);
+  EXPECT_EQ(global.max_clips_per_hour, 0u);
+  EXPECT_TRUE(manager.getConfig().snapshots.front().trigger.enabled());
+}
+
+TEST(ConfigManagerV2Test, InvalidPinPolicyRejected)
+{
+  std::string yaml = kV2Config;
+  yaml.replace(yaml.find("\"keep\""), 6, "\"maybe\"");
+  EXPECT_THROW(loadYaml("v2_bad_policy", yaml), ConfigException);
+}
+
+TEST(ConfigManagerV2Test, InvalidBudgetsRejected)
+{
+  std::string fraction = kV2Config;
+  fraction.replace(fraction.find("0.4"), 3, "1.5");
+  EXPECT_THROW(loadYaml("v2_bad_fraction", fraction), ConfigException);
+
+  std::string latency = kV2Config;
+  latency.replace(latency.find("7.0"), 3, "-1");
+  EXPECT_THROW(loadYaml("v2_bad_latency", latency), ConfigException);
+
+  std::string duration = kV2Config;
+  duration.replace(duration.find("max_clip_duration: 90"), 21, "max_clip_duration: 0");
+  EXPECT_THROW(loadYaml("v2_bad_duration", duration), ConfigException);
+}
+
+TEST(ConfigManagerV2Test, PartialTriggerStillValidated)
+{
+  // A trigger block that is present must still be complete
+  std::string yaml = kV2Config;
+  yaml.replace(yaml.find("      msg_type: \"std_msgs/msg/Bool\"\n"), 36, "");
+  EXPECT_THROW(loadYaml("v2_partial_trigger", yaml), ConfigException);
+}
+
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);

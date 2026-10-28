@@ -22,6 +22,7 @@
 #include "ros_time_machine/buffer_manager.hpp"
 #include "ros_time_machine/trigger_monitor.hpp"
 #include "ros_time_machine/recorder.hpp"
+#include "ros_time_machine/ros_interface.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -56,8 +57,12 @@ int main(int argc, char ** argv)
     for (const auto & snapshot : config.snapshots) {
       RCLCPP_INFO(node->get_logger(), "\nSnapshot: %s", snapshot.name.c_str());
       RCLCPP_INFO(node->get_logger(), "  Description: %s", snapshot.description.c_str());
-      RCLCPP_INFO(node->get_logger(), "  Trigger topic: %s", snapshot.trigger.topic.c_str());
-      RCLCPP_INFO(node->get_logger(), "  Message type: %s", snapshot.trigger.msg_type.c_str());
+      if (snapshot.trigger.enabled()) {
+        RCLCPP_INFO(node->get_logger(), "  Trigger topic: %s", snapshot.trigger.topic.c_str());
+        RCLCPP_INFO(node->get_logger(), "  Message type: %s", snapshot.trigger.msg_type.c_str());
+      } else {
+        RCLCPP_INFO(node->get_logger(), "  Trigger: none (EventTrigger / service only)");
+      }
       RCLCPP_INFO(node->get_logger(), "  Recording topics: %zu", snapshot.recording.topics.size());
       for (const auto & topic : snapshot.recording.topics) {
         RCLCPP_INFO(node->get_logger(), "    - %s", topic.c_str());
@@ -69,6 +74,8 @@ int main(int argc, char ** argv)
       RCLCPP_INFO(node->get_logger(), "  Rate limit: %u triggers/min",
                   snapshot.rate_limit.max_triggers_per_minute);
       RCLCPP_INFO(node->get_logger(), "  Output path: %s", snapshot.output.path.c_str());
+      RCLCPP_INFO(node->get_logger(), "  Pin timeout policy: %s (default ttl %.1fs)",
+                  snapshot.pins.keep_on_timeout ? "keep" : "drop", snapshot.pins.default_ttl);
     }
 
     RCLCPP_INFO(node->get_logger(), "\n=== Global Settings ===");
@@ -78,6 +85,10 @@ int main(int argc, char ** argv)
     RCLCPP_INFO(node->get_logger(), "Log level: %s", config.global.log_level.c_str());
     RCLCPP_INFO(node->get_logger(), "Publish stats: %s",
                 config.global.publish_stats ? "enabled" : "disabled");
+    RCLCPP_INFO(node->get_logger(), "Event trigger topic: %s",
+                config.global.event_trigger_topic.c_str());
+    RCLCPP_INFO(node->get_logger(), "Max trigger latency: %.1fs (added to every buffer)",
+                config.global.max_trigger_latency);
 
     RCLCPP_INFO(node->get_logger(), "\n=== Configuration loaded successfully! ===");
 
@@ -133,6 +144,10 @@ int main(int argc, char ** argv)
       return 1;
     }
 
+    // Time-addressed triggers, pins, services and stats
+    RCLCPP_INFO(node->get_logger(), "\n=== Initializing ROS Interface ===");
+    ros_time_machine::RosInterface ros_interface(node, config, buffer_manager, recorder);
+
     RCLCPP_INFO(node->get_logger(), "\n=== Time Machine Ready! ===");
     RCLCPP_INFO(node->get_logger(), "Buffering, trigger monitoring, and recording active.");
 
@@ -142,6 +157,11 @@ int main(int argc, char ** argv)
 
   } catch (const ros_time_machine::ConfigException & e) {
     RCLCPP_ERROR(node->get_logger(), "Configuration error: %s", e.what());
+    return 1;
+  } catch (const std::exception & e) {
+    // Reached after the components' destructors ran, so pending clips were flushed
+    RCLCPP_FATAL(node->get_logger(), "Unhandled exception: %s", e.what());
+    rclcpp::shutdown();
     return 1;
   }
 

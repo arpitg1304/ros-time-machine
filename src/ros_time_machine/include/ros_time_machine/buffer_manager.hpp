@@ -20,6 +20,7 @@
 #include <map>
 #include <vector>
 #include <chrono>
+#include <functional>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/serialization.hpp"
@@ -67,6 +68,7 @@ struct TopicBufferStats
   rclcpp::Time oldest_message_time;
   rclcpp::Time newest_message_time;
   size_t estimated_memory_bytes;
+  size_t pinned_message_count;  // Held past eviction for pins / pending triggers
 };
 
 /**
@@ -161,6 +163,37 @@ public:
    */
   bool isTopicBuffered(const std::string & topic_name) const;
 
+  /**
+   * @brief Protect messages from eviction while guard(stamp_ns) returns true
+   *
+   * Applies to every existing buffer and to buffers created later by topic
+   * discovery. The guard runs under buffer locks and must not call back into
+   * the BufferManager.
+   *
+   * @param guard Predicate over message ROS time in nanoseconds
+   * @param budget_fraction Share of each buffer's capacity that may be retained
+   */
+  void setEvictionGuard(std::function<bool(int64_t)> guard, double budget_fraction);
+
+  /**
+   * @brief Release retained messages the guard no longer covers
+   *
+   * @return size_t Number of messages released across all topics
+   */
+  size_t pruneRetained();
+
+  /**
+   * @brief ROS time of the oldest message still held for a topic
+   *
+   * @return rclcpp::Time Oldest stamp, or zero if the topic has no data
+   */
+  rclcpp::Time getOldestTimestamp(const std::string & topic_name) const;
+
+  /**
+   * @brief Message type of a buffered topic ("" until discovered)
+   */
+  std::string getTopicType(const std::string & topic_name) const;
+
 private:
   /**
    * @brief Information about a buffered topic
@@ -234,6 +267,21 @@ private:
    */
   void discoveryTimerCallback();
 
+  /**
+   * @brief Create a topic buffer with the current eviction guard applied
+   */
+  std::shared_ptr<CircularBuffer<SerializedMessage>> makeBuffer(size_t capacity) const;
+
+  /**
+   * @brief (Re)apply the eviction guard and pin budget to one buffer
+   */
+  void applyEvictionGuard(CircularBuffer<SerializedMessage> & buffer) const;
+
+  /**
+   * @brief Fill statistics for one topic (caller holds buffers_mutex_)
+   */
+  TopicBufferStats statsFor(const TopicInfo & info) const;
+
   rclcpp::Node::SharedPtr node_;
   rclcpp::Logger logger_;
   std::map<std::string, TopicInfo> topic_buffers_;
@@ -243,6 +291,10 @@ private:
   // Topic discovery
   std::map<std::string, double> required_topics_;  // topic_name -> buffer_duration
   rclcpp::TimerBase::SharedPtr discovery_timer_;
+
+  // Eviction protection for pinned ranges and pending triggers
+  std::function<bool(int64_t)> eviction_guard_;
+  double pin_budget_fraction_;
 };
 
 }  // namespace ros_time_machine

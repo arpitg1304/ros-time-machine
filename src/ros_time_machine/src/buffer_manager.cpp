@@ -22,7 +22,7 @@ namespace ros_time_machine
 BufferManager::BufferManager(
   rclcpp::Node::SharedPtr node,
   rclcpp::Logger logger)
-  : node_(node), logger_(logger), initialized_(false)
+  : node_(node), logger_(logger), initialized_(false), pin_budget_fraction_(0.0)
 {
 }
 
@@ -92,7 +92,7 @@ bool BufferManager::initialize(const TimeMachineConfig & config)
       info.message_count_for_estimate = 0;
 
       // Create buffer immediately
-      info.buffer = std::make_shared<CircularBuffer<SerializedMessage>>(info.buffer_capacity);
+      info.buffer = makeBuffer(info.buffer_capacity);
 
       std::lock_guard<std::mutex> lock(buffers_mutex_);
       topic_buffers_[topic_name] = info;
@@ -140,10 +140,17 @@ std::vector<SerializedMessage> BufferManager::getMessages(
   const rclcpp::Time & start_time,
   const rclcpp::Time & end_time)
 {
-  std::lock_guard<std::mutex> lock(buffers_mutex_);
-
-  auto it = topic_buffers_.find(topic_name);
-  if (it == topic_buffers_.end() || !it->second.buffer) {
+  // Copy the window outside buffers_mutex_ (the buffer has its own lock), so a large
+  // clip read does not stall every topic's subscription callback
+  std::shared_ptr<CircularBuffer<SerializedMessage>> buffer;
+  {
+    std::lock_guard<std::mutex> lock(buffers_mutex_);
+    auto it = topic_buffers_.find(topic_name);
+    if (it != topic_buffers_.end()) {
+      buffer = it->second.buffer;
+    }
+  }
+  if (!buffer) {
     RCLCPP_WARN(logger_, "No buffer found for topic: %s", topic_name.c_str());
     return {};
   }
@@ -154,7 +161,7 @@ std::vector<SerializedMessage> BufferManager::getMessages(
   auto end_tp = std::chrono::system_clock::time_point(
     std::chrono::nanoseconds(end_time.nanoseconds()));
 
-  auto timestamped_messages = it->second.buffer->getRange(start_tp, end_tp);
+  auto timestamped_messages = buffer->getRange(start_tp, end_tp);
 
   std::vector<SerializedMessage> result;
   result.reserve(timestamped_messages.size());
@@ -187,10 +194,14 @@ TopicBufferStats BufferManager::getTopicStats(const std::string & topic_name) co
     return TopicBufferStats();  // Return empty stats
   }
 
-  const auto & info = it->second;
+  return statsFor(it->second);
+}
+
+TopicBufferStats BufferManager::statsFor(const TopicInfo & info) const
+{
   TopicBufferStats stats;
 
-  stats.topic_name = topic_name;
+  stats.topic_name = info.topic_name;
   stats.message_count = info.buffer->size();
   stats.capacity = info.buffer->capacity();
   stats.messages_dropped = info.buffer->droppedCount();
@@ -208,7 +219,9 @@ TopicBufferStats BufferManager::getTopicStats(const std::string & topic_name) co
     std::chrono::duration_cast<std::chrono::nanoseconds>(
       newest_tp.time_since_epoch()).count());
 
-  stats.estimated_memory_bytes = stats.message_count * info.message_size_estimate;
+  stats.pinned_message_count = info.buffer->retainedCount();
+  stats.estimated_memory_bytes =
+    (stats.message_count + stats.pinned_message_count) * info.message_size_estimate;
 
   return stats;
 }
@@ -218,11 +231,10 @@ std::vector<TopicBufferStats> BufferManager::getAllStats() const
   std::vector<TopicBufferStats> all_stats;
 
   std::lock_guard<std::mutex> lock(buffers_mutex_);
-  for (const auto & [topic_name, _] : topic_buffers_) {
-    // Unlock temporarily to call getTopicStats (which also locks)
-    buffers_mutex_.unlock();
-    all_stats.push_back(getTopicStats(topic_name));
-    buffers_mutex_.lock();
+  for (const auto & [_, info] : topic_buffers_) {
+    if (info.buffer) {
+      all_stats.push_back(statsFor(info));
+    }
   }
 
   return all_stats;
@@ -235,7 +247,7 @@ size_t BufferManager::getTotalMemoryUsage() const
 
   for (const auto & [_, info] : topic_buffers_) {
     if (info.buffer) {
-      total += info.buffer->size() * info.message_size_estimate;
+      total += (info.buffer->size() + info.buffer->retainedCount()) * info.message_size_estimate;
     }
   }
 
@@ -260,6 +272,74 @@ bool BufferManager::isTopicBuffered(const std::string & topic_name) const
   return topic_buffers_.find(topic_name) != topic_buffers_.end();
 }
 
+void BufferManager::setEvictionGuard(std::function<bool(int64_t)> guard, double budget_fraction)
+{
+  std::lock_guard<std::mutex> lock(buffers_mutex_);
+  eviction_guard_ = std::move(guard);
+  pin_budget_fraction_ = budget_fraction;
+
+  for (auto & [_, info] : topic_buffers_) {
+    if (info.buffer) {
+      applyEvictionGuard(*info.buffer);
+    }
+  }
+}
+
+size_t BufferManager::pruneRetained()
+{
+  std::lock_guard<std::mutex> lock(buffers_mutex_);
+  size_t released = 0;
+  for (auto & [_, info] : topic_buffers_) {
+    if (info.buffer) {
+      released += info.buffer->pruneRetained();
+    }
+  }
+  return released;
+}
+
+rclcpp::Time BufferManager::getOldestTimestamp(const std::string & topic_name) const
+{
+  std::lock_guard<std::mutex> lock(buffers_mutex_);
+  auto it = topic_buffers_.find(topic_name);
+  if (it == topic_buffers_.end() || !it->second.buffer || it->second.buffer->empty()) {
+    return rclcpp::Time(0, 0, RCL_ROS_TIME);
+  }
+  auto oldest = it->second.buffer->oldestTimestamp();
+  return rclcpp::Time(
+    std::chrono::duration_cast<std::chrono::nanoseconds>(oldest.time_since_epoch()).count(),
+    RCL_ROS_TIME);
+}
+
+std::string BufferManager::getTopicType(const std::string & topic_name) const
+{
+  std::lock_guard<std::mutex> lock(buffers_mutex_);
+  auto it = topic_buffers_.find(topic_name);
+  return it == topic_buffers_.end() ? std::string() : it->second.type_name;
+}
+
+std::shared_ptr<CircularBuffer<SerializedMessage>> BufferManager::makeBuffer(size_t capacity) const
+{
+  auto buffer = std::make_shared<CircularBuffer<SerializedMessage>>(capacity);
+  applyEvictionGuard(*buffer);
+  return buffer;
+}
+
+void BufferManager::applyEvictionGuard(CircularBuffer<SerializedMessage> & buffer) const
+{
+  auto max_retained = static_cast<size_t>(buffer.capacity() * pin_budget_fraction_);
+  if (!eviction_guard_) {
+    buffer.setEvictionGuard(nullptr, max_retained);
+    return;
+  }
+  auto guard = eviction_guard_;
+  buffer.setEvictionGuard(
+    [guard](const CircularBuffer<SerializedMessage>::TimePoint & t) {
+      return guard(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(t.time_since_epoch()).count());
+    },
+    max_retained);
+}
+
 bool BufferManager::createTopicBuffer(
   const std::string & topic_name,
   const std::string & type_name,
@@ -271,9 +351,9 @@ bool BufferManager::createTopicBuffer(
   RCLCPP_INFO(logger_, "Creating buffer for %s (type: %s, capacity: %zu messages)",
               topic_name.c_str(), type_name.c_str(), capacity);
 
-  auto buffer = std::make_shared<CircularBuffer<SerializedMessage>>(capacity);
-
   std::lock_guard<std::mutex> lock(buffers_mutex_);
+  auto buffer = makeBuffer(capacity);
+
   auto it = topic_buffers_.find(topic_name);
   if (it != topic_buffers_.end()) {
     it->second.buffer = buffer;
@@ -317,7 +397,7 @@ void BufferManager::genericCallback(
   if (!info.buffer) {
     // We don't know the exact type, but we can get it from the subscription
     // For now, just create the buffer with the configured capacity
-    info.buffer = std::make_shared<CircularBuffer<SerializedMessage>>(info.buffer_capacity);
+    info.buffer = makeBuffer(info.buffer_capacity);
     RCLCPP_INFO(logger_, "Created buffer for topic %s on first message (capacity: %zu)",
                 topic_name.c_str(), info.buffer_capacity);
   }
@@ -373,9 +453,11 @@ std::map<std::string, double> BufferManager::extractTopicsFromConfig(
 
   // Iterate through all snapshots
   for (const auto & snapshot : config.snapshots) {
-    // Buffer needs to hold pre + post event data since messages continue arriving after trigger
+    // Buffer needs to hold pre + post event data since messages continue arriving after trigger,
+    // plus however late a time-addressed trigger may arrive (VLM detection lag)
     double duration = snapshot.recording.pre_event_duration +
-                      snapshot.recording.post_event_duration;
+                      snapshot.recording.post_event_duration +
+                      config.global.max_trigger_latency;
 
     // Add all recording topics from this snapshot
     for (const auto & topic : snapshot.recording.topics) {
@@ -442,7 +524,7 @@ void BufferManager::discoveryTimerCallback()
       info.message_count_for_estimate = 0;
 
       // Create buffer
-      info.buffer = std::make_shared<CircularBuffer<SerializedMessage>>(info.buffer_capacity);
+      info.buffer = makeBuffer(info.buffer_capacity);
 
       topic_buffers_[topic_name] = info;
 

@@ -1,7 +1,7 @@
-# Invalid config - missing required fields
+# Invalid config - missing required recording durations
 snapshots:
   - name: "incomplete_snapshot"
-    # Missing trigger section
+    # No trigger is fine (EventTrigger-only profile), but durations are required
     recording:
       topics:
         - "/test/topic"

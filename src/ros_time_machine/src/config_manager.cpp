@@ -140,55 +140,55 @@ TimeMachineConfig ConfigManager::parseYaml(const std::string & config_file)
         snapshot.description = snapshot_node["description"].as<std::string>();
       }
 
-      // Parse trigger (required)
-      if (!snapshot_node["trigger"]) {
-        throw ConfigException("Snapshot '" + snapshot.name + "' missing required field 'trigger'");
-      }
-      const YAML::Node & trigger_node = snapshot_node["trigger"];
+      // Parse trigger (optional: profiles without one fire only from EventTrigger,
+      // pins and the TriggerSnapshot service)
+      if (snapshot_node["trigger"]) {
+        const YAML::Node & trigger_node = snapshot_node["trigger"];
 
-      if (!trigger_node["topic"]) {
-        throw ConfigException("Trigger missing required field 'topic'");
-      }
-      snapshot.trigger.topic = trigger_node["topic"].as<std::string>();
-
-      if (!trigger_node["msg_type"]) {
-        throw ConfigException("Trigger missing required field 'msg_type'");
-      }
-      snapshot.trigger.msg_type = trigger_node["msg_type"].as<std::string>();
-
-      // Parse condition (required)
-      if (!trigger_node["condition"]) {
-        throw ConfigException("Trigger missing required field 'condition'");
-      }
-      const YAML::Node & cond_node = trigger_node["condition"];
-
-      if (!cond_node["field"]) {
-        throw ConfigException("Condition missing required field 'field'");
-      }
-      snapshot.trigger.condition.field = cond_node["field"].as<std::string>();
-
-      if (!cond_node["operator"]) {
-        throw ConfigException("Condition missing required field 'operator'");
-      }
-      std::string op_str = cond_node["operator"].as<std::string>();
-      snapshot.trigger.condition.op = stringToOperator(op_str);
-
-      if (!cond_node["value"]) {
-        throw ConfigException("Condition missing required field 'value'");
-      }
-      // Support numeric, boolean, and string values
-      const YAML::Node & value_node = cond_node["value"];
-      try {
-        // Try as boolean first (handles both quoted and unquoted true/false)
-        try {
-          bool bool_val = value_node.as<bool>();
-          snapshot.trigger.condition.value = bool_val ? 1.0 : 0.0;
-        } catch (const YAML::Exception &) {
-          // Not a boolean, try as numeric
-          snapshot.trigger.condition.value = value_node.as<double>();
+        if (!trigger_node["topic"]) {
+          throw ConfigException("Trigger missing required field 'topic'");
         }
-      } catch (const YAML::Exception & e) {
-        throw ConfigException("Failed to parse condition value: " + std::string(e.what()));
+        snapshot.trigger.topic = trigger_node["topic"].as<std::string>();
+
+        if (!trigger_node["msg_type"]) {
+          throw ConfigException("Trigger missing required field 'msg_type'");
+        }
+        snapshot.trigger.msg_type = trigger_node["msg_type"].as<std::string>();
+
+        // Parse condition (required)
+        if (!trigger_node["condition"]) {
+          throw ConfigException("Trigger missing required field 'condition'");
+        }
+        const YAML::Node & cond_node = trigger_node["condition"];
+
+        if (!cond_node["field"]) {
+          throw ConfigException("Condition missing required field 'field'");
+        }
+        snapshot.trigger.condition.field = cond_node["field"].as<std::string>();
+
+        if (!cond_node["operator"]) {
+          throw ConfigException("Condition missing required field 'operator'");
+        }
+        std::string op_str = cond_node["operator"].as<std::string>();
+        snapshot.trigger.condition.op = stringToOperator(op_str);
+
+        if (!cond_node["value"]) {
+          throw ConfigException("Condition missing required field 'value'");
+        }
+        // Support numeric, boolean, and string values
+        const YAML::Node & value_node = cond_node["value"];
+        try {
+          // Try as boolean first (handles both quoted and unquoted true/false)
+          try {
+            bool bool_val = value_node.as<bool>();
+            snapshot.trigger.condition.value = bool_val ? 1.0 : 0.0;
+          } catch (const YAML::Exception &) {
+            // Not a boolean, try as numeric
+            snapshot.trigger.condition.value = value_node.as<double>();
+          }
+        } catch (const YAML::Exception & e) {
+          throw ConfigException("Failed to parse condition value: " + std::string(e.what()));
+        }
       }
 
       // Parse recording (required)
@@ -244,6 +244,26 @@ TimeMachineConfig ConfigManager::parseYaml(const std::string & config_file)
         }
       }
 
+      // Parse pins (optional)
+      if (snapshot_node["pins"]) {
+        const YAML::Node & pins_node = snapshot_node["pins"];
+        if (pins_node["timeout_policy"]) {
+          std::string policy = pins_node["timeout_policy"].as<std::string>();
+          if (policy == "keep") {
+            snapshot.pins.keep_on_timeout = true;
+          } else if (policy == "drop") {
+            snapshot.pins.keep_on_timeout = false;
+          } else {
+            throw ConfigException(
+              "Invalid pins.timeout_policy for snapshot '" + snapshot.name + "': " + policy +
+              " (must be 'keep' or 'drop')");
+          }
+        }
+        if (pins_node["default_ttl"]) {
+          snapshot.pins.default_ttl = pins_node["default_ttl"].as<double>();
+        }
+      }
+
       config.snapshots.push_back(snapshot);
     }
   } else {
@@ -273,6 +293,51 @@ TimeMachineConfig ConfigManager::parseYaml(const std::string & config_file)
 
     if (global_node["stats_publish_rate"]) {
       config.global.stats_publish_rate = global_node["stats_publish_rate"].as<double>();
+    }
+
+    if (global_node["event_trigger_topic"]) {
+      config.global.event_trigger_topic = global_node["event_trigger_topic"].as<std::string>();
+    }
+
+    if (global_node["max_trigger_latency"]) {
+      config.global.max_trigger_latency = global_node["max_trigger_latency"].as<double>();
+    }
+
+    if (global_node["write_settle_time"]) {
+      config.global.write_settle_time = global_node["write_settle_time"].as<double>();
+    }
+
+    if (global_node["pin_budget_fraction"]) {
+      config.global.pin_budget_fraction = global_node["pin_budget_fraction"].as<double>();
+    }
+
+    if (global_node["budget"]) {
+      const YAML::Node & budget_node = global_node["budget"];
+      if (budget_node["max_clips_per_hour"]) {
+        config.global.max_clips_per_hour = budget_node["max_clips_per_hour"].as<uint32_t>();
+      }
+      if (budget_node["merge_gap"]) {
+        config.global.merge_gap = budget_node["merge_gap"].as<double>();
+      }
+      if (budget_node["max_clip_duration"]) {
+        config.global.max_clip_duration = budget_node["max_clip_duration"].as<double>();
+      }
+    }
+
+    if (global_node["robot"]) {
+      const YAML::Node & robot_node = global_node["robot"];
+      if (!robot_node.IsMap()) {
+        throw ConfigException("'global.robot' must be a map");
+      }
+      for (const auto & entry : robot_node) {
+        std::string key = entry.first.as<std::string>();
+        std::string value = entry.second.as<std::string>();
+        if (key == "id") {
+          config.global.robot_id = value;
+        } else {
+          config.global.metadata[key] = value;
+        }
+      }
     }
   }
 
@@ -316,21 +381,29 @@ void ConfigManager::validateSnapshot(const SnapshotConfig & snapshot)
     throw ConfigException("Snapshot name cannot be empty");
   }
 
-  // Validate trigger topic
-  if (!isValidTopicName(snapshot.trigger.topic)) {
-    throw ConfigException("Invalid trigger topic name: " + snapshot.trigger.topic);
+  if (snapshot.trigger.enabled()) {
+    // Validate trigger topic
+    if (!isValidTopicName(snapshot.trigger.topic)) {
+      throw ConfigException("Invalid trigger topic name: " + snapshot.trigger.topic);
+    }
+
+    // Validate message type format (should contain at least one '/')
+    if (snapshot.trigger.msg_type.find('/') == std::string::npos) {
+      throw ConfigException(
+        "Invalid message type format: " + snapshot.trigger.msg_type +
+        " (expected format: package/msg/Type)");
+    }
+
+    // Validate condition field is not empty
+    if (snapshot.trigger.condition.field.empty()) {
+      throw ConfigException(
+        "Trigger condition field cannot be empty for snapshot: " + snapshot.name);
+    }
   }
 
-  // Validate message type format (should contain at least one '/')
-  if (snapshot.trigger.msg_type.find('/') == std::string::npos) {
-    throw ConfigException(
-      "Invalid message type format: " + snapshot.trigger.msg_type +
-      " (expected format: package/msg/Type)");
-  }
-
-  // Validate condition field is not empty
-  if (snapshot.trigger.condition.field.empty()) {
-    throw ConfigException("Trigger condition field cannot be empty for snapshot: " + snapshot.name);
+  // Validate pin policy
+  if (snapshot.pins.default_ttl <= 0.0) {
+    throw ConfigException("pins.default_ttl must be > 0 for snapshot: " + snapshot.name);
   }
 
   // Validate recording topics
@@ -402,6 +475,31 @@ void ConfigManager::validateGlobal(const GlobalConfig & global)
   // Validate stats publish rate
   if (global.publish_stats && global.stats_publish_rate <= 0.0) {
     throw ConfigException("stats_publish_rate must be > 0 when publish_stats is enabled");
+  }
+
+  // Validate time-addressed trigger settings
+  if (!isValidTopicName(global.event_trigger_topic)) {
+    throw ConfigException("Invalid event_trigger_topic: " + global.event_trigger_topic);
+  }
+
+  if (global.max_trigger_latency < 0.0) {
+    throw ConfigException("max_trigger_latency cannot be negative");
+  }
+
+  if (global.write_settle_time < 0.0) {
+    throw ConfigException("write_settle_time cannot be negative");
+  }
+
+  if (global.pin_budget_fraction < 0.0 || global.pin_budget_fraction > 1.0) {
+    throw ConfigException("pin_budget_fraction must be between 0 and 1");
+  }
+
+  if (global.merge_gap < 0.0) {
+    throw ConfigException("budget.merge_gap cannot be negative");
+  }
+
+  if (global.max_clip_duration <= 0.0) {
+    throw ConfigException("budget.max_clip_duration must be > 0");
   }
 
   RCLCPP_DEBUG(logger_, "Validated global configuration");

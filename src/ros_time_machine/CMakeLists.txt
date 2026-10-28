@@ -9,9 +9,26 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rosbag2_cpp REQUIRED)
+find_package(rosbag2_storage REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+find_package(ros_time_machine_msgs REQUIRED)
+
+# ROS-free core: pins, time-addressed trigger queue, event.json sidecar
+add_library(rtm_core
+  src/pin_manager.cpp
+  src/trigger_queue.cpp
+  src/event_sidecar.cpp
+)
+
+target_include_directories(rtm_core PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+
+target_compile_features(rtm_core PUBLIC cxx_std_17)
 
 # Config Manager library
 add_library(config_manager
@@ -48,6 +65,7 @@ target_compile_features(buffer_manager PUBLIC cxx_std_17)
 ament_target_dependencies(buffer_manager
   rclcpp
   rosbag2_cpp
+  rosbag2_storage
 )
 
 # Trigger Monitor library
@@ -80,9 +98,39 @@ target_include_directories(recorder PUBLIC
 
 target_compile_features(recorder PUBLIC cxx_std_17)
 
+target_link_libraries(recorder
+  rtm_core
+  buffer_manager
+)
+
 ament_target_dependencies(recorder
   rclcpp
   rosbag2_cpp
+  rosbag2_storage
+)
+
+# ROS interface library (EventTrigger, pin services, stats)
+add_library(ros_interface
+  src/ros_interface.cpp
+)
+
+target_include_directories(ros_interface PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+
+target_compile_features(ros_interface PUBLIC cxx_std_17)
+
+target_link_libraries(ros_interface
+  recorder
+  buffer_manager
+)
+
+ament_target_dependencies(ros_interface
+  rclcpp
+  rosbag2_cpp
+  builtin_interfaces
+  ros_time_machine_msgs
 )
 
 # Main executable
@@ -100,6 +148,7 @@ target_link_libraries(time_machine_node
   buffer_manager
   trigger_monitor
   recorder
+  ros_interface
 )
 
 ament_target_dependencies(time_machine_node
@@ -107,15 +156,18 @@ ament_target_dependencies(time_machine_node
   rosbag2_cpp
   std_msgs
   sensor_msgs
+  ros_time_machine_msgs
 )
 
 # Install targets
 install(TARGETS
   time_machine_node
+  rtm_core
   config_manager
   buffer_manager
   trigger_monitor
   recorder
+  ros_interface
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -156,6 +208,14 @@ if(BUILD_TESTING)
   )
   target_compile_features(test_circular_buffer PUBLIC cxx_std_17)
 
+  # Unit tests - ROS-free core (pins, trigger queue, sidecar)
+  ament_add_gtest(test_pin_manager test/test_pin_manager.cpp)
+  target_link_libraries(test_pin_manager rtm_core)
+  ament_add_gtest(test_trigger_queue test/test_trigger_queue.cpp)
+  target_link_libraries(test_trigger_queue rtm_core)
+  ament_add_gtest(test_event_sidecar test/test_event_sidecar.cpp)
+  target_link_libraries(test_event_sidecar rtm_core)
+
   # Unit tests - ConfigManager
   ament_add_gtest(test_config_manager test/test_config_manager.cpp)
   target_link_libraries(test_config_manager config_manager)
@@ -181,6 +241,13 @@ if(BUILD_TESTING)
     test/test_integration.py
     TARGET test_integration
     TIMEOUT 30
+  )
+
+  # v2: time-addressed triggers, merging, pins, event.json
+  add_launch_test(
+    test/test_event_trigger_integration.py
+    TARGET test_event_trigger_integration
+    TIMEOUT 90
   )
 endif()
 
