@@ -29,14 +29,11 @@ jobs:
           source /opt/ros/jazzy/setup.bash
           colcon build --symlink-install --event-handlers console_cohesion+
 
-      - name: Unit and launch tests
+      - name: Tests and linters
         run: |
           source /opt/ros/jazzy/setup.bash
           source install/setup.bash
-          # The ament style linters are skipped: they fail on code that predates v2
-          colcon test --packages-select ros_time_machine --ctest-args -R \
-            "test_(circular_buffer|pin_manager|trigger_queue|event_sidecar|config_manager|integration|event_trigger_integration)"
-          colcon test --packages-select rtm_watcher rtm_vlm
+          colcon test   # unit, launch and ament style tests (uncrustify, flake8, pep257, ...)
           colcon test-result --verbose
           python3 -m pytest -q deploy/vllm/tests
 

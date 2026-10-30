@@ -52,7 +52,7 @@ const EventRequest & PendingClip::primary() const
 }
 
 TriggerQueue::TriggerQueue(TriggerBudget budget)
-  : budget_(budget)
+: budget_(budget)
 {
 }
 

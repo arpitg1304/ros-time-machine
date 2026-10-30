@@ -45,20 +45,17 @@ is what to send.
 ## 3. Tests
 
 ```bash
-# C++ unit tests (buffer + pins, trigger queue, sidecar, config) and the two launch tests
-colcon test --packages-select ros_time_machine \
-    --ctest-args -R "test_(circular_buffer|pin_manager|trigger_queue|event_sidecar|config_manager|integration|event_trigger_integration)"
-# Python: watcher, review CLI, rtm_vlm, deploy kit
-colcon test --packages-select rtm_watcher rtm_vlm
+# Every package: C++ unit tests, the two launch tests, Python tests and the ament linters
+colcon test
 python3 -m pytest -q deploy/vllm/tests
 colcon test-result --verbose | tail -40
 ```
 
 `test_event_trigger_integration` is the important one. It starts the node, sends a trigger
 for a moment 1 s in the past, checks the clip's window and `event.json`, then checks that
-overlapping triggers merge and that a pin kept through `~/release_pin` becomes a clip. The
-`-R` filter skips the ament linters (`uncrustify`, `cpplint`); their style complaints
-predate v2.
+overlapping triggers merge and that a pin kept through `~/release_pin` becomes a clip. Style
+failures (`uncrustify`, `flake8`, `pep257`) are fixed with `ament_uncrustify --reformat`
+and by hand; CI runs them too.
 
 ## 4. Full pipeline, no GPU
 

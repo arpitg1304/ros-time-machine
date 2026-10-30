@@ -93,7 +93,7 @@ std::string formatIso8601(int64_t ns)
 #endif
   char buf[40];
   std::strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S", &tm_utc);
-  char out[48];
+  char out[64];  // room for the widest value the compiler assumes millis can take
   std::snprintf(out, sizeof(out), "%s.%03lldZ", buf, static_cast<long long>(millis));
   return out;
 }

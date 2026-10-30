@@ -50,7 +50,7 @@ struct SerializedMessage
     const std::string & topic,
     const std::string & type,
     const rclcpp::Time & ts)
-    : data(msg), topic_name(topic), type_name(type), timestamp(ts)
+  : data(msg), topic_name(topic), type_name(type), timestamp(ts)
   {
   }
 };

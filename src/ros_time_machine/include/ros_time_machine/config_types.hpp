@@ -52,7 +52,7 @@ struct TriggerCondition
   double value;                   // Value to compare against
 
   TriggerCondition()
-    : field(""), op(ComparisonOperator::EQUAL), value(0.0) {}
+  : field(""), op(ComparisonOperator::EQUAL), value(0.0) {}
 };
 
 /**
@@ -68,7 +68,7 @@ struct TriggerConfig
   TriggerCondition condition;     // Condition to evaluate
 
   TriggerConfig()
-    : topic(""), msg_type("") {}
+  : topic(""), msg_type("") {}
 
   bool enabled() const {return !topic.empty();}
 };
@@ -84,9 +84,9 @@ struct RecordingConfig
   uint64_t max_buffer_size;            // Max buffer size per topic in MB
 
   RecordingConfig()
-    : pre_event_duration(0.0),
-      post_event_duration(0.0),
-      max_buffer_size(100) {}
+  : pre_event_duration(0.0),
+    post_event_duration(0.0),
+    max_buffer_size(100) {}
 };
 
 /**
@@ -97,7 +97,7 @@ struct RateLimitConfig
   uint32_t max_triggers_per_minute;    // Maximum triggers allowed per minute
 
   RateLimitConfig()
-    : max_triggers_per_minute(10) {}
+  : max_triggers_per_minute(10) {}
 };
 
 /**
@@ -110,9 +110,9 @@ struct OutputConfig
   std::string format;                  // Rosbag format ("mcap" or "sqlite3")
 
   OutputConfig()
-    : path("/tmp/ros_time_machine"),
-      name_pattern("{snapshot_name}_{timestamp}"),
-      format("mcap") {}
+  : path("/tmp/ros_time_machine"),
+    name_pattern("{snapshot_name}_{timestamp}"),
+    format("mcap") {}
 };
 
 /**
@@ -124,8 +124,8 @@ struct PinConfig
   double default_ttl;                  // Seconds, used when PinRange gives ttl <= 0
 
   PinConfig()
-    : keep_on_timeout(false),
-      default_ttl(30.0) {}
+  : keep_on_timeout(false),
+    default_ttl(30.0) {}
 };
 
 /**
@@ -142,7 +142,7 @@ struct SnapshotConfig
   PinConfig pins;                      // Pin timeout policy
 
   SnapshotConfig()
-    : name(""), description("") {}
+  : name(""), description("") {}
 };
 
 /**
@@ -174,18 +174,18 @@ struct GlobalConfig
   std::map<std::string, std::string> metadata;
 
   GlobalConfig()
-    : max_total_buffer_memory(2000),
-      recording_threads(4),
-      log_level("INFO"),
-      publish_stats(true),
-      stats_publish_rate(1.0),
-      event_trigger_topic("/time_machine/event_trigger"),
-      max_trigger_latency(0.0),
-      write_settle_time(0.2),
-      max_clips_per_hour(0),
-      merge_gap(0.0),
-      max_clip_duration(300.0),
-      pin_budget_fraction(0.25) {}
+  : max_total_buffer_memory(2000),
+    recording_threads(4),
+    log_level("INFO"),
+    publish_stats(true),
+    stats_publish_rate(1.0),
+    event_trigger_topic("/time_machine/event_trigger"),
+    max_trigger_latency(0.0),
+    write_settle_time(0.2),
+    max_clips_per_hour(0),
+    merge_gap(0.0),
+    max_clip_duration(300.0),
+    pin_budget_fraction(0.25) {}
 };
 
 /**

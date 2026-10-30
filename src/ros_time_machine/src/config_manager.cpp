@@ -42,7 +42,7 @@ ComparisonOperator stringToOperator(const std::string & op_str)
 }
 
 ConfigManager::ConfigManager(rclcpp::Logger logger)
-  : logger_(logger), loaded_(false)
+: logger_(logger), loaded_(false)
 {
 }
 
@@ -193,7 +193,8 @@ TimeMachineConfig ConfigManager::parseYaml(const std::string & config_file)
 
       // Parse recording (required)
       if (!snapshot_node["recording"]) {
-        throw ConfigException("Snapshot '" + snapshot.name + "' missing required field 'recording'");
+        throw ConfigException("Snapshot '" + snapshot.name +
+            "' missing required field 'recording'");
       }
       const YAML::Node & rec_node = snapshot_node["recording"];
 
@@ -408,7 +409,8 @@ void ConfigManager::validateSnapshot(const SnapshotConfig & snapshot)
 
   // Validate recording topics
   if (snapshot.recording.topics.empty()) {
-    throw ConfigException("Recording must specify at least one topic for snapshot: " + snapshot.name);
+    throw ConfigException("Recording must specify at least one topic for snapshot: " +
+        snapshot.name);
   }
 
   for (const auto & topic : snapshot.recording.topics) {
@@ -427,7 +429,7 @@ void ConfigManager::validateSnapshot(const SnapshotConfig & snapshot)
   }
 
   if (snapshot.recording.pre_event_duration == 0.0 &&
-      snapshot.recording.post_event_duration == 0.0)
+    snapshot.recording.post_event_duration == 0.0)
   {
     throw ConfigException(
       "At least one of pre_event_duration or post_event_duration must be > 0 for snapshot: " +

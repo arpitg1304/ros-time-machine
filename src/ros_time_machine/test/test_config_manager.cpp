@@ -209,7 +209,8 @@ TEST_F(ConfigManagerTest, ReloadConfiguration)
 TEST(ConfigManagerMultiSnapshotTest, MultipleSnapshots)
 {
   // Create a temporary config with multiple snapshots
-  const char * multi_snapshot_config = R"(
+  const char * multi_snapshot_config =
+    R"(
 snapshots:
   - name: "snapshot1"
     description: "First snapshot"
@@ -291,7 +292,8 @@ global:
 // Edge cases and validation tests
 TEST(ConfigManagerEdgeCasesTest, EmptyTopicsList)
 {
-  const char * empty_topics_config = R"(
+  const char * empty_topics_config =
+    R"(
 snapshots:
   - name: "empty_topics"
     description: "No recording topics"
@@ -334,7 +336,8 @@ global:
 
 TEST(ConfigManagerEdgeCasesTest, NegativeDurations)
 {
-  const char * negative_duration_config = R"(
+  const char * negative_duration_config =
+    R"(
 snapshots:
   - name: "negative_duration"
     description: "Negative durations"
@@ -398,7 +401,8 @@ std::unique_ptr<ConfigManager> loadYaml(const std::string & name, const std::str
   return manager;
 }
 
-const char * kV2Config = R"(
+const char * kV2Config =
+  R"(
 snapshots:
   - name: "manipulation"
     description: "VLM-triggered manipulation events"

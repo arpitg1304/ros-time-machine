@@ -56,15 +56,15 @@ void setBagTimestamp(M & msg, int64_t t, long)
 Recorder::Recorder(
   rclcpp::Node::SharedPtr node,
   rclcpp::Logger logger)
-  : node_(node),
-    logger_(logger),
-    buffer_manager_(nullptr),
-    time_source_("ros"),
-    shutdown_(false),
-    active_recordings_(0),
-    completed_recordings_(0),
-    failed_recordings_(0),
-    initialized_(false)
+: node_(node),
+  logger_(logger),
+  buffer_manager_(nullptr),
+  time_source_("ros"),
+  shutdown_(false),
+  active_recordings_(0),
+  completed_recordings_(0),
+  failed_recordings_(0),
+  initialized_(false)
 {
 }
 
@@ -238,8 +238,8 @@ SubmitResult Recorder::submitEvent(EventRequest request)
                 request.label.c_str(), request.source.c_str(), request.profile.c_str(),
                 static_cast<unsigned long>(result.clip_id),
                 result.outcome == SubmitOutcome::MERGED ? "merged" : "queued",
-                (request.event_ns - request.start_ns) / 1e9,
-                (request.end_ns - request.event_ns) / 1e9, lag);
+      (request.event_ns - request.start_ns) / 1e9,
+      (request.end_ns - request.event_ns) / 1e9, lag);
   } else {
     RCLCPP_WARN(logger_, "Event '%s' from %s rejected: %s",
                 request.label.c_str(), request.source.c_str(), result.message.c_str());
@@ -294,7 +294,7 @@ PinResult Recorder::pinRange(
   result.message = "pinned";
   RCLCPP_INFO(logger_, "Pin %lu on '%s': %.2fs window, ttl %.1fs (%s)",
               static_cast<unsigned long>(result.pin_id), profile->name.c_str(),
-              (end_ns - start_ns) / 1e9, ttl, reason.c_str());
+    (end_ns - start_ns) / 1e9, ttl, reason.c_str());
   return result;
 }
 
@@ -413,7 +413,7 @@ void Recorder::workerThread(size_t thread_id)
     {
       std::unique_lock<std::mutex> lock(queue_mutex_);
       queue_cv_.wait(lock, [this] {
-        return !job_queue_.empty() || shutdown_;
+          return !job_queue_.empty() || shutdown_;
       });
 
       if (job_queue_.empty()) {
@@ -666,9 +666,9 @@ bool Recorder::writeRosbag(
     // Sort by timestamp, then topic: two clips of the same window are identical.
     // stable_sort keeps arrival order within a topic.
     std::stable_sort(sorted_messages.begin(), sorted_messages.end(),
-                     [](const auto & a, const auto & b) {
-                       return std::tie(a.first, a.second->topic_name) <
-                              std::tie(b.first, b.second->topic_name);
+      [](const auto & a, const auto & b) {
+        return std::tie(a.first, a.second->topic_name) <
+               std::tie(b.first, b.second->topic_name);
                      });
 
     // Write messages

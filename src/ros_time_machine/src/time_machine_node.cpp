@@ -123,21 +123,22 @@ int main(int argc, char ** argv)
     ros_time_machine::TriggerMonitor trigger_monitor(node, node->get_logger());
 
     // Define trigger callback
-    auto trigger_callback = [&node, &recorder, &config](const ros_time_machine::TriggerEvent & event) {
-      RCLCPP_INFO(node->get_logger(),
+    auto trigger_callback = [&node, &recorder,
+        &config](const ros_time_machine::TriggerEvent & event) {
+        RCLCPP_INFO(node->get_logger(),
                   "*** TRIGGER EVENT *** Snapshot: %s, Topic: %s, Value: %.2f",
                   event.snapshot_name.c_str(),
                   event.trigger_topic.c_str(),
                   event.trigger_value);
 
       // Find the snapshot configuration
-      for (const auto & snapshot : config.snapshots) {
-        if (snapshot.name == event.snapshot_name) {
-          recorder.handleTrigger(event, snapshot);
-          break;
+        for (const auto & snapshot : config.snapshots) {
+          if (snapshot.name == event.snapshot_name) {
+            recorder.handleTrigger(event, snapshot);
+            break;
+          }
         }
-      }
-    };
+      };
 
     if (!trigger_monitor.initialize(config, trigger_callback)) {
       RCLCPP_ERROR(node->get_logger(), "Failed to initialize trigger monitor");

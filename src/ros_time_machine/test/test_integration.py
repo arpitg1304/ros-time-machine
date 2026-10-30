@@ -16,7 +16,6 @@
 """Integration test for ROS Time Machine node."""
 
 import os
-import pathlib
 import tempfile
 import time
 import unittest
@@ -71,7 +70,7 @@ global:
 """
 
     temp_dir = tempfile.mkdtemp()
-    config_file = os.path.join(temp_dir, "test_config.yaml")
+    config_file = os.path.join(temp_dir, 'test_config.yaml')
     with open(config_file, 'w') as f:
         f.write(test_config)
 

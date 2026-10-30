@@ -57,11 +57,12 @@ public:
     T data;
 
     // Default constructor
-    TimestampedElement() : timestamp(), data() {}
+    TimestampedElement()
+    : timestamp(), data() {}
 
     // Parameterized constructor
     TimestampedElement(const TimePoint & ts, const T & d)
-      : timestamp(ts), data(d) {}
+    : timestamp(ts), data(d) {}
   };
 
   /**
@@ -70,14 +71,14 @@ public:
    * @param capacity Maximum number of elements to store
    */
   explicit CircularBuffer(size_t capacity)
-    : capacity_(capacity),
-      buffer_(capacity),
-      head_(0),
-      tail_(0),
-      size_(0),
-      dropped_count_(0),
-      max_retained_(capacity / 4),
-      retained_dropped_count_(0)
+  : capacity_(capacity),
+    buffer_(capacity),
+    head_(0),
+    tail_(0),
+    size_(0),
+    dropped_count_(0),
+    max_retained_(capacity / 4),
+    retained_dropped_count_(0)
   {
   }
 

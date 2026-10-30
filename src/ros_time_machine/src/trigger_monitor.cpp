@@ -44,7 +44,7 @@ bool RateLimiter::allowTrigger()
 TriggerMonitor::TriggerMonitor(
   rclcpp::Node::SharedPtr node,
   rclcpp::Logger logger)
-  : node_(node), logger_(logger), initialized_(false)
+: node_(node), logger_(logger), initialized_(false)
 {
 }
 
@@ -102,9 +102,9 @@ bool TriggerMonitor::initialize(
 
     // Create generic subscription
     auto callback_fn = [this, snapshot_name = snapshot.name]
-                       (std::shared_ptr<rclcpp::SerializedMessage> msg) {
-      this->triggerCallback(snapshot_name, msg);
-    };
+      (std::shared_ptr<rclcpp::SerializedMessage> msg) {
+        this->triggerCallback(snapshot_name, msg);
+      };
 
     try {
       auto subscription = node_->create_generic_subscription(
@@ -376,7 +376,8 @@ void TriggerMonitor::discoveryTimerCallback()
 
     // Skip if we already have a subscription for this snapshot
     if (triggers_.find(snapshot.name) != triggers_.end() &&
-        triggers_[snapshot.name].subscription) {
+      triggers_[snapshot.name].subscription)
+    {
       continue;
     }
 
@@ -399,9 +400,9 @@ void TriggerMonitor::discoveryTimerCallback()
 
     // Create generic subscription
     auto callback_fn = [this, snapshot_name = snapshot.name]
-                       (std::shared_ptr<rclcpp::SerializedMessage> msg) {
-      this->triggerCallback(snapshot_name, msg);
-    };
+      (std::shared_ptr<rclcpp::SerializedMessage> msg) {
+        this->triggerCallback(snapshot_name, msg);
+      };
 
     try {
       auto subscription = node_->create_generic_subscription(
@@ -423,7 +424,8 @@ void TriggerMonitor::discoveryTimerCallback()
 
       triggers_[snapshot.name] = info;
 
-      RCLCPP_INFO(logger_, "Dynamically discovered and subscribed to trigger topic %s (type: %s) for snapshot '%s'",
+      RCLCPP_INFO(logger_,
+          "Dynamically discovered and subscribed to trigger topic %s (type: %s) for snapshot '%s'",
                   topic_name.c_str(), type_name.c_str(), snapshot.name.c_str());
     } catch (const std::exception & e) {
       RCLCPP_ERROR(logger_, "Failed to subscribe to trigger topic %s: %s",

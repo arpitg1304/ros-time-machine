@@ -24,7 +24,6 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     """Generate launch description for time machine node."""
-
     # Declare launch arguments
     config_file_arg = DeclareLaunchArgument(
         'config_file',

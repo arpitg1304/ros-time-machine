@@ -22,7 +22,7 @@ namespace ros_time_machine
 BufferManager::BufferManager(
   rclcpp::Node::SharedPtr node,
   rclcpp::Logger logger)
-  : node_(node), logger_(logger), initialized_(false), pin_budget_fraction_(0.0)
+: node_(node), logger_(logger), initialized_(false), pin_budget_fraction_(0.0)
 {
 }
 
@@ -72,8 +72,8 @@ bool BufferManager::initialize(const TimeMachineConfig & config)
 
     // Create generic subscription
     auto callback = [this, topic_name](std::shared_ptr<rclcpp::SerializedMessage> msg) {
-      this->genericCallback(topic_name, msg);
-    };
+        this->genericCallback(topic_name, msg);
+      };
 
     try {
       auto subscription = node_->create_generic_subscription(
@@ -456,8 +456,8 @@ std::map<std::string, double> BufferManager::extractTopicsFromConfig(
     // Buffer needs to hold pre + post event data since messages continue arriving after trigger,
     // plus however late a time-addressed trigger may arrive (VLM detection lag)
     double duration = snapshot.recording.pre_event_duration +
-                      snapshot.recording.post_event_duration +
-                      config.global.max_trigger_latency;
+      snapshot.recording.post_event_duration +
+      config.global.max_trigger_latency;
 
     // Add all recording topics from this snapshot
     for (const auto & topic : snapshot.recording.topics) {
@@ -504,8 +504,8 @@ void BufferManager::discoveryTimerCallback()
 
     // Create generic subscription
     auto callback = [this, topic_name](std::shared_ptr<rclcpp::SerializedMessage> msg) {
-      this->genericCallback(topic_name, msg);
-    };
+        this->genericCallback(topic_name, msg);
+      };
 
     try {
       auto subscription = node_->create_generic_subscription(
@@ -528,7 +528,8 @@ void BufferManager::discoveryTimerCallback()
 
       topic_buffers_[topic_name] = info;
 
-      RCLCPP_INFO(logger_, "Dynamically discovered and subscribed to topic %s (type: %s, capacity: %zu)",
+      RCLCPP_INFO(logger_,
+          "Dynamically discovered and subscribed to topic %s (type: %s, capacity: %zu)",
                   topic_name.c_str(), type_name.c_str(), info.buffer_capacity);
     } catch (const std::exception & e) {
       RCLCPP_ERROR(logger_, "Failed to subscribe to topic %s: %s",

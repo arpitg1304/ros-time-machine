@@ -39,11 +39,11 @@ RosInterface::RosInterface(
   const TimeMachineConfig & config,
   BufferManager & buffer_manager,
   Recorder & recorder)
-  : node_(node),
-    config_(config),
-    buffer_manager_(buffer_manager),
-    recorder_(recorder),
-    start_time_(std::chrono::steady_clock::now())
+: node_(node),
+  config_(config),
+  buffer_manager_(buffer_manager),
+  recorder_(recorder),
+  start_time_(std::chrono::steady_clock::now())
 {
   using std::placeholders::_1;
   using std::placeholders::_2;

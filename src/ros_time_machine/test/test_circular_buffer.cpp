@@ -299,10 +299,10 @@ TEST_F(CircularBufferTest, ConcurrentPushes)
 
   for (int i = 0; i < num_threads; ++i) {
     threads.emplace_back([this, i, pushes_per_thread]() {
-      for (int j = 0; j < pushes_per_thread; ++j) {
-        auto ts = system_clock::now();
-        buffer_->push(ts, i * pushes_per_thread + j);
-      }
+        for (int j = 0; j < pushes_per_thread; ++j) {
+          auto ts = system_clock::now();
+          buffer_->push(ts, i * pushes_per_thread + j);
+        }
     });
   }
 
@@ -325,25 +325,25 @@ TEST_F(CircularBufferTest, ConcurrentPushAndRead)
 
   // Writer thread
   threads.emplace_back([this, &stop]() {
-    int counter = 0;
-    while (!stop) {
-      auto ts = system_clock::now();
-      buffer_->push(ts, counter++);
-      std::this_thread::sleep_for(milliseconds(1));
-    }
+      int counter = 0;
+      while (!stop) {
+        auto ts = system_clock::now();
+        buffer_->push(ts, counter++);
+        std::this_thread::sleep_for(milliseconds(1));
+      }
   });
 
   // Reader threads
   for (int i = 0; i < 3; ++i) {
     threads.emplace_back([this, &stop]() {
-      while (!stop) {
-        auto size = buffer_->size();
-        auto empty = buffer_->empty();
-        auto full = buffer_->full();
-        auto dropped = buffer_->droppedCount();
-        (void)size; (void)empty; (void)full; (void)dropped;
-        std::this_thread::sleep_for(milliseconds(5));
-      }
+        while (!stop) {
+          auto size = buffer_->size();
+          auto empty = buffer_->empty();
+          auto full = buffer_->full();
+          auto dropped = buffer_->droppedCount();
+          (void)size; (void)empty; (void)full; (void)dropped;
+          std::this_thread::sleep_for(milliseconds(5));
+        }
     });
   }
 
@@ -413,10 +413,12 @@ TEST(CircularBufferTypesTest, StringType)
 
 TEST(CircularBufferTypesTest, StructType)
 {
-  struct TestData {
+  struct TestData
+  {
     int id;
     double value;
-    bool operator==(const TestData & other) const {
+    bool operator==(const TestData & other) const
+    {
       return id == other.id && value == other.value;
     }
   };
