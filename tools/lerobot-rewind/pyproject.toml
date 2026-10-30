@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lerobot-rewind"
+version = "0.1.0"
+description = "Replay LeRobot datasets as a running ROS 2 robot: one MCAP session, playable with ros2 bag play --clock"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.9"
+dependencies = [
+    "mcap>=1.1",
+    "mcap-ros2-support>=0.5",
+    "zstandard",
+    "numpy",
+    "pandas",
+    "pyarrow",
+]
+
+[project.optional-dependencies]
+hub = ["huggingface_hub"]   # datasets by repo id, not only local paths
+sheets = ["pillow"]         # contact sheets for labelling
+test = ["pytest", "pillow"]
+
+[project.scripts]
+lerobot-rewind = "lerobot_rewind.cli:main"
+
+[tool.setuptools]
+packages = ["lerobot_rewind"]

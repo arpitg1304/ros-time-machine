@@ -45,3 +45,18 @@ jobs:
           source /opt/ros/jazzy/setup.bash
           source install/setup.bash
           scripts/check_first_clip.sh
+
+  lerobot-rewind:
+    name: lerobot-rewind (no ROS)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install ffmpeg and the tool
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pip install "./tools/lerobot-rewind[test]"
+      - name: Tests
+        run: pytest -q tools/lerobot-rewind/tests
