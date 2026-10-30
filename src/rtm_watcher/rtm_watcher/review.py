@@ -191,12 +191,18 @@ def load_truth(path: str) -> List[TruthEvent]:
     return events
 
 
-def evaluate(clips: List[Clip], truth: List[TruthEvent], match_label: bool = True) -> dict:
+def evaluate(clips: List[Clip], truth: List[TruthEvent], match_label: bool = True,
+             near: Tuple[float, float] = (3.0, 8.0)) -> dict:
     """The plan's metrics: recall, precision, detection lag, pre-event coverage.
 
     A labelled event is recalled if some clip's window contains it (with the same
     label unless match_label is False). A clip is precise if its window contains
     a labelled event. Lag runs from the labelled time to the trigger's arrival.
+
+    Long windows can contain an event the trigger had nothing to do with, so the
+    `*_near` metrics look at the frame each trigger pointed at instead: an event
+    counts when a trigger's event_stamp lies from near[0] s before to near[1] s
+    after it. `noticed` accepts a trigger of any label there.
     """
     def window(clip):
         w = clip.event.get('window') or {}
@@ -220,6 +226,18 @@ def evaluate(clips: List[Clip], truth: List[TruthEvent], match_label: bool = Tru
     precise = sum(1 for c in clips if any(contains(c, e) for e in truth))
     complete = [c.pre_event_complete for c in clips if c.pre_event_complete is not None]
 
+    before_ns, after_ns = int(near[0] * 1e9), int(near[1] * 1e9)
+    triggers = [(c, e.get('label'), e.get('event_stamp_ns', 0))
+                for c in clips for e in (c.event.get('events') or [c.trigger])]
+
+    def close(stamp_ns, event):
+        return -before_ns <= stamp_ns - event.stamp_ns <= after_ns
+
+    noticed = sum(1 for ev in truth if any(close(st, ev) for _, _, st in triggers))
+    recalled_near = sum(1 for ev in truth if any(lab == ev.label and close(st, ev) for _, lab, st in triggers))
+    precise_near = sum(1 for c in clips if any(
+        cc is c and close(st, ev) and lab == ev.label for cc, lab, st in triggers for ev in truth))
+
     def pct(values, q):
         values = sorted(values)
         return values[min(len(values) - 1, int(q * len(values)))] if values else None
@@ -232,6 +250,9 @@ def evaluate(clips: List[Clip], truth: List[TruthEvent], match_label: bool = Tru
         'lag_p50_s': pct(lags, 0.5),
         'lag_p99_s': pct(lags, 0.99),
         'pre_event_coverage': sum(complete) / len(complete) if complete else None,
+        'noticed': noticed / len(truth) if truth else None,
+        'recall_near': recalled_near / len(truth) if truth else None,
+        'precision_near': precise_near / len(clips) if clips else None,
     }
 
 
@@ -306,7 +327,7 @@ def cmd_stats(args) -> int:
 
 
 def cmd_eval(args) -> int:
-    result = evaluate(find_clips(args.root), load_truth(args.truth), not args.any_label)
+    result = evaluate(find_clips(args.root), load_truth(args.truth), not args.any_label, tuple(args.near))
     if args.json:
         print(json.dumps(result, indent=2))
         return 0
@@ -345,6 +366,8 @@ def main(argv=None) -> int:
     p.add_argument('--truth', required=True, help='CSV with columns label,time_s')
     p.add_argument('--any-label', action='store_true',
                    help='count a clip as a hit whatever label it fired with')
+    p.add_argument('--near', nargs=2, type=float, default=[3.0, 8.0], metavar=('BEFORE', 'AFTER'),
+                   help='*_near metrics: trigger frame this many s before/after the event (3 8)')
     p.add_argument('--json', action='store_true')
     p.set_defaults(func=cmd_eval)
 

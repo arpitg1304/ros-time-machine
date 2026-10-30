@@ -131,6 +131,14 @@ def test_evaluate_plan_metrics(tmp_path):
     assert loose['recall'] == pytest.approx(2 / 3)
     assert loose['precision'] == pytest.approx(2 / 3)
 
+    # Near metrics look at the trigger frame: 101 is 1 s after the drop at 100; 300 is the
+    # person's time but labelled object_dropped, so it is noticed, not recalled
+    assert strict['noticed'] == pytest.approx(2 / 3)
+    assert strict['recall_near'] == pytest.approx(1 / 3)
+    assert strict['precision_near'] == pytest.approx(1 / 3)
+    tight = review.evaluate(clips, truth, near=(0.0, 0.5))
+    assert tight['recall_near'] == 0 and tight['noticed'] == pytest.approx(1 / 3)
+
     assert review.main(['eval', str(clips_dir), '--truth', str(truth_csv), '--json']) == 0
 
 
