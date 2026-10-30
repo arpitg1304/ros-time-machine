@@ -1,0 +1,64 @@
+<svg width="1280" height="430" viewBox="0 0 1280 430" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="430" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#101a2c"/></linearGradient></defs>
+<rect width="1280" height="430" rx="20" fill="url(#bg)"/>
+<rect x="1" y="1" width="1278" height="428" rx="19" fill="none" stroke="#243049" stroke-width="1.5"/>
+<text x="64" y="58" font-size="30" font-weight="800" fill="#e2e8f0">Results on 45 SO-101 rollouts</text>
+<text x="64" y="88" font-size="16" fill="#94a3b8">46 labelled events, replayed through Time Machine with Qwen3-VL-4B. Higher is better in every panel.</text>
+<rect x="64" y="128" width="272" height="250" rx="14" fill="#0e1626" stroke="#2d3a52"/>
+<text x="82" y="162" font-size="15" font-weight="700" fill="#cbd5e1">Noticed</text>
+<text x="82" y="198" font-size="12.5" fill="#94a3b8">baseline</text>
+<rect x="82" y="208" width="236" height="10" rx="5" fill="#1b2538"/>
+<rect x="82" y="208" width="189.8" height="10" rx="5" fill="#475569"/>
+<text x="318" y="198" font-size="13" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" text-anchor="end" fill="#94a3b8">80 % · 37/46</text>
+<text x="82" y="270" font-size="12.5" fill="#94a3b8">crisp</text>
+<rect x="82" y="280" width="236" height="10" rx="5" fill="#1b2538"/>
+<rect x="82" y="280" width="215.5" height="10" rx="5" fill="#475569"/>
+<text x="318" y="270" font-size="13" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" text-anchor="end" fill="#94a3b8">91 % · 42/46</text>
+<text x="82" y="342" font-size="12.5" fill="#e2e8f0">crisp + wrist</text>
+<rect x="82" y="352" width="236" height="10" rx="5" fill="#1b2538"/>
+<rect x="82" y="352" width="225.7" height="10" rx="5" fill="#7dd3fc"/>
+<text x="318" y="342" font-size="13" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" text-anchor="end" fill="#e2e8f0">96 % · 44/46</text>
+<rect x="360" y="128" width="272" height="250" rx="14" fill="#0e1626" stroke="#2d3a52"/>
+<text x="378" y="162" font-size="15" font-weight="700" fill="#cbd5e1">Named correctly</text>
+<text x="378" y="198" font-size="12.5" fill="#94a3b8">baseline</text>
+<rect x="378" y="208" width="236" height="10" rx="5" fill="#1b2538"/>
+<rect x="378" y="208" width="51.3" height="10" rx="5" fill="#475569"/>
+<text x="614" y="198" font-size="13" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" text-anchor="end" fill="#94a3b8">22 % · 10/46</text>
+<text x="378" y="270" font-size="12.5" fill="#94a3b8">crisp</text>
+<rect x="378" y="280" width="236" height="10" rx="5" fill="#1b2538"/>
+<rect x="378" y="280" width="179.6" height="10" rx="5" fill="#475569"/>
+<text x="614" y="270" font-size="13" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" text-anchor="end" fill="#94a3b8">76 % · 35/46</text>
+<text x="378" y="342" font-size="12.5" fill="#e2e8f0">crisp + wrist</text>
+<rect x="378" y="352" width="236" height="10" rx="5" fill="#1b2538"/>
+<rect x="378" y="352" width="215.5" height="10" rx="5" fill="#7dd3fc"/>
+<text x="614" y="342" font-size="13" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" text-anchor="end" fill="#e2e8f0">91 % · 42/46</text>
+<rect x="656" y="128" width="272" height="250" rx="14" fill="#0e1626" stroke="#2d3a52"/>
+<text x="674" y="162" font-size="15" font-weight="700" fill="#cbd5e1">Precision</text>
+<text x="674" y="198" font-size="12.5" fill="#94a3b8">baseline</text>
+<rect x="674" y="208" width="236" height="10" rx="5" fill="#1b2538"/>
+<rect x="674" y="208" width="22.3" height="10" rx="5" fill="#475569"/>
+<text x="910" y="198" font-size="13" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" text-anchor="end" fill="#94a3b8">9 % · 10/106</text>
+<text x="674" y="270" font-size="12.5" fill="#94a3b8">crisp</text>
+<rect x="674" y="280" width="236" height="10" rx="5" fill="#1b2538"/>
+<rect x="674" y="280" width="66.9" height="10" rx="5" fill="#475569"/>
+<text x="910" y="270" font-size="13" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" text-anchor="end" fill="#94a3b8">28 % · 38/134</text>
+<text x="674" y="342" font-size="12.5" fill="#e2e8f0">crisp + wrist</text>
+<rect x="674" y="352" width="236" height="10" rx="5" fill="#1b2538"/>
+<rect x="674" y="352" width="74.9" height="10" rx="5" fill="#7dd3fc"/>
+<text x="910" y="342" font-size="13" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" text-anchor="end" fill="#e2e8f0">32 % · 47/148</text>
+<rect x="952" y="128" width="272" height="250" rx="14" fill="#0e1626" stroke="#2d3a52"/>
+<text x="970" y="162" font-size="15" font-weight="700" fill="#cbd5e1">Precision without cut artifacts</text>
+<text x="970" y="198" font-size="12.5" fill="#94a3b8">baseline</text>
+<rect x="970" y="208" width="236" height="10" rx="5" fill="#1b2538"/>
+<rect x="970" y="208" width="46.3" height="10" rx="5" fill="#475569"/>
+<text x="1206" y="198" font-size="13" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" text-anchor="end" fill="#94a3b8">20 % · 10/51</text>
+<text x="970" y="270" font-size="12.5" fill="#94a3b8">crisp</text>
+<rect x="970" y="280" width="236" height="10" rx="5" fill="#1b2538"/>
+<rect x="970" y="280" width="138.0" height="10" rx="5" fill="#475569"/>
+<text x="1206" y="270" font-size="13" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" text-anchor="end" fill="#94a3b8">58 % · 38/65</text>
+<text x="970" y="342" font-size="12.5" fill="#e2e8f0">crisp + wrist</text>
+<rect x="970" y="352" width="236" height="10" rx="5" fill="#1b2538"/>
+<rect x="970" y="352" width="138.7" height="10" rx="5" fill="#7dd3fc"/>
+<text x="1206" y="342" font-size="13" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" text-anchor="end" fill="#e2e8f0">59 % · 47/80</text>
+<text x="64" y="404" font-size="13" fill="#7c89a3">Noticed: a trigger of any label within 3 s before to 8 s after the event. Cut artifacts: false alarms in the first 3 s of an episode, where the replay cuts between recordings.</text>
+</svg>

@@ -213,6 +213,13 @@ watcher:
   suction cup", not "Grasp failure".
 - **Make each event specific.** Name the object, the place and the motion. Vague events
   ("something goes wrong") fire constantly and mean little.
+- **Make sure no two events fit the same moment.** If a falling object matches both
+  `object_dropped` and `not_seated`, the model picks either, and each label's recall drops.
+  Leave out events that can't happen in your task: they only add false alarms. On SO-101
+  rollouts, fixing both took right-label recall from 22 % to 76 %
+  ([results](RESULTS_SO101.md)).
+- **Watch a second camera when position matters.** A wrist camera shows which slot or fixture
+  an object is in, which an overhead view of a small part can't.
 - **Set the scene once in `robot_context`.** One sentence about the robot, the gripper and the
   task gives the model what it needs to read every frame.
 - **Use stable `label`s** in `snake_case`. They become clip names, and the review tools group

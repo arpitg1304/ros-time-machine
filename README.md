@@ -118,15 +118,15 @@ longer buffer (`max_trigger_latency`); it never loses the seconds before the eve
 
 ### Measured
 
-The demo, 5 minutes and 15 cup drops, with Qwen3-VL-4B FP8 on vLLM on an RTX 4070 Ti SUPER,
-scored with `review eval` against ground truth:
+On **45 recorded SO-101 policy rollouts**, replayed with [`lerobot-rewind`](tools/lerobot-rewind/)
+through Qwen3-VL-4B FP8 on an RTX 4070 Ti SUPER, scored against hand labels:
 
-| Recall | Detection lag (p50 / p99) | VLM call (warm p50) | Clips with full pre-event data |
+| Events noticed | Named correctly | Lag (p50) | Precision |
 |---|---|---|---|
-| **15 / 15 drops** | 1.37 s / 1.67 s | 0.23 s | 30 / 31 |
+| **44 / 46** | 42 / 46 | 1.2 s | 32 % (59 % without replay artifacts) |
 
-The defaults favour recall: each drop was saved about twice, which costs disk and review time,
-not data. See [Testing v2 on Ubuntu](docs/TESTING_V2_ON_UBUNTU.md#6-real-vlm-end-to-end).
+**[Full results, misses and false alarms included →](docs/RESULTS_SO101.md)** The scripted
+demo catches 15 of 15 drops ([Testing v2 on Ubuntu](docs/TESTING_V2_ON_UBUNTU.md#6-real-vlm-end-to-end)).
 
 ### What else v2 adds
 
@@ -144,6 +144,8 @@ not data. See [Testing v2 on Ubuntu](docs/TESTING_V2_ON_UBUNTU.md#6-real-vlm-end
 - **[Wiring it into your robot](docs/INTEGRATION_GUIDE.md)**: from your topics to measured clips, step by step
 - **[How a trigger becomes a clip](docs/SEMANTIC_TRIGGER_FLOW.md)**: the code path, with a real prompt and `event.json`
 - **[Semantic triggers](docs/SEMANTIC_TRIGGERS.md)**: design, configuration, interfaces, cascade, review
+- **[Results on 45 SO-101 rollouts](docs/RESULTS_SO101.md)**: recall, precision and lag, with what went wrong
+- **[lerobot-rewind](tools/lerobot-rewind/)**: replay any LeRobot dataset as a running ROS 2 robot, no ROS needed to convert
 - **[Choosing and running a VLM](docs/VLM_BACKENDS.md)** · **[vLLM server on a GPU box](deploy/vllm/README.md)** · **[Testing v2 on Ubuntu](docs/TESTING_V2_ON_UBUNTU.md)**
 
 ## How it works

@@ -45,3 +45,6 @@ htmlcov/
 
 # Local vLLM settings (API key, HF token)
 deploy/vllm/.env
+
+# Local experiment runs (pushed selectively later)
+experiments/

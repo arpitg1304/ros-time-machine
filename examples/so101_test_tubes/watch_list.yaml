@@ -1,0 +1,40 @@
+# Watch list for the SO-101 test-tube task, as tested on 45 replayed Diffusion Policy
+# rollouts (docs/RESULTS_SO101.md): 44/46 events noticed, 42/46 named correctly.
+# Four events that don't overlap, and both cameras: the wrist view tells rack slots apart.
+watcher:
+  endpoint: http://127.0.0.1:8000/v1   # deploy/vllm on this machine
+  model: qwen3-vl-4b-instruct
+  request_timeout_s: 30
+  cameras: [/camera/top/image_raw/compressed, /camera/wrist/image_raw/compressed]
+  state_topics: [/joint_states]
+  sample_hz: 1.0
+  context_frames: 4
+  max_image_px: 640
+  robot_context: >-
+    Overhead view of an SO-101 robot arm (orange) on a grey table. A wooden test tube rack
+    with a row of slots sits in the middle; a test tube with a red cap starts in the
+    leftmost slot, and the task is to move it into the rightmost slot.
+  min_confidence: 0.5
+  cooldown_s: 5
+  events:
+    - label: tube_dropped
+      describe: >-
+        The test tube ends up outside the rack: it falls from the gripper or off the rack, or
+        lies on the table.
+      profile: manipulation
+    - label: tube_wrong_slot
+      describe: >-
+        The gripper lets go of the red-capped tube while it stands in the rack but not in the
+        rightmost slot (it is in the leftmost or a middle slot).
+      profile: manipulation
+    - label: person_in_cell
+      describe: "A person's hand or arm enters the area around the robot."
+      profile: safety
+      min_confidence: 0.4
+    - label: tube_placed
+      describe: >-
+        The red-capped test tube stands upright in the rightmost slot of the rack and the
+        gripper has let go of it.
+      profile: episodes
+      pre_event: 25.0
+      post_event: 2.0

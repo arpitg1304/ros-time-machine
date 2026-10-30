@@ -1,0 +1,60 @@
+# Time Machine profiles for the SO-101 test-tube and lego bench.
+# Topics come from the LeRobot bridge (see PLAN.md): both cameras as JPEG, the follower's
+# joint positions, and the commanded action (leader arm or policy).
+snapshots:
+  - name: "manipulation"            # failures spotted by the watcher
+    recording:
+      topics: &all_topics
+        - "/camera/top/image_raw/compressed"
+        - "/camera/wrist/image_raw/compressed"
+        - "/joint_states"
+        - "/lerobot/action"
+      pre_event_duration: 6.0
+      post_event_duration: 3.0
+      max_buffer_size: 300          # MB per topic; 640x480 JPEG at 30 fps is ~1.2 MB/s
+    rate_limit:
+      max_triggers_per_minute: 12
+    pins:
+      timeout_policy: "drop"
+    output:
+      path: "/tmp/ros_time_machine/so101/clips"
+      name_pattern: "{label}_{timestamp}"
+      format: "mcap"
+
+  - name: "safety"                  # people in the cell; also the e-stop rule below
+    trigger:
+      topic: "/emergency_stop"
+      msg_type: "std_msgs/msg/Bool"
+      condition: { field: "data", operator: "==", value: true }
+    recording:
+      topics: *all_topics
+      pre_event_duration: 10.0
+      post_event_duration: 5.0
+      max_buffer_size: 300
+    pins:
+      timeout_policy: "keep"
+    output:
+      path: "/tmp/ros_time_machine/so101/clips"
+      name_pattern: "{label}_{timestamp}"
+
+  - name: "episodes"                # successes, long windows (events set 25 s before)
+    recording:
+      topics: *all_topics
+      pre_event_duration: 25.0
+      post_event_duration: 2.0
+      max_buffer_size: 300
+    output:
+      path: "/tmp/ros_time_machine/so101/episodes"
+      name_pattern: "{label}_{timestamp}"
+
+global:
+  max_total_buffer_memory: 4000
+  recording_threads: 2
+  publish_stats: true
+  max_trigger_latency: 5.0          # check.sh suggested 3 s on this GPU; margin for 2 cameras
+  budget:
+    max_clips_per_hour: 240
+    merge_gap: 1.0
+  robot:
+    id: "so101-follower"
+    policy_version: "teleop"        # set per session: teleop, act_test_tube_pilot, ...

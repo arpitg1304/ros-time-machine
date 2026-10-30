@@ -1,0 +1,47 @@
+episode,label,t_rel_s,source
+0,tube_placed,9.47,gripper release; tube upright in rightmost slot
+1,tube_placed,9.93,gripper release; tube upright in rightmost slot
+2,tube_placed,13.03,gripper release; tube upright in rightmost slot
+3,tube_dropped,14.6,gripper release; tube ends on the table
+4,tube_wrong_slot,12.27,gripper release; tube in a slot other than the rightmost
+5,tube_placed,8.5,gripper release; tube upright in rightmost slot
+6,tube_placed,8.97,gripper release; tube upright in rightmost slot
+7,tube_wrong_slot,10.43,gripper release; tube in a slot other than the rightmost
+8,tube_placed,8.77,gripper release; tube upright in rightmost slot
+9,tube_dropped,13.87,gripper release; tube ends on the table
+10,tube_dropped,7.73,gripper release; tube ends on the table
+11,tube_placed,9.13,gripper release; tube upright in rightmost slot
+12,tube_placed,9.43,gripper release; tube upright in rightmost slot
+13,tube_placed,9.63,gripper release; tube upright in rightmost slot
+14,tube_placed,10.03,gripper release; tube upright in rightmost slot
+15,tube_dropped,14.4,gripper release; tube ends on the table
+16,tube_dropped,8.17,gripper release; tube ends on the table
+17,tube_dropped,10.17,gripper release; tube ends on the table
+18,tube_dropped,10.03,gripper release; tube ends on the table
+19,tube_dropped,9.03,gripper release; tube ends on the table
+20,tube_dropped,8.4,gripper release; tube ends on the table
+21,tube_dropped,9.4,gripper release; tube ends on the table
+22,tube_dropped,8.87,gripper release; tube ends on the table
+23,tube_wrong_slot,9.13,gripper release; tube in a slot other than the rightmost
+24,tube_dropped,9.27,gripper release; tube ends on the table
+25,tube_dropped,8.57,gripper release; tube ends on the table
+26,tube_dropped,9.0,gripper release; tube ends on the table
+27,tube_dropped,8.3,gripper release; tube ends on the table
+28,tube_dropped,8.4,gripper release; tube ends on the table
+29,tube_dropped,7.43,gripper release; tube ends on the table
+30,tube_wrong_slot,9.57,gripper release; tube in a slot other than the rightmost
+31,tube_wrong_slot,9.53,gripper release; tube in a slot other than the rightmost
+32,tube_wrong_slot,9.83,gripper release; tube in a slot other than the rightmost
+33,tube_wrong_slot,9.37,gripper release; tube in a slot other than the rightmost
+34,tube_wrong_slot,8.97,gripper release; tube in a slot other than the rightmost
+35,tube_wrong_slot,8.7,gripper release; tube in a slot other than the rightmost
+36,tube_wrong_slot,10.13,gripper release; tube in a slot other than the rightmost
+37,tube_wrong_slot,9.07,gripper release; tube in a slot other than the rightmost
+38,tube_wrong_slot,13.4,gripper release; tube in a slot other than the rightmost
+39,tube_wrong_slot,9.7,gripper release; tube in a slot other than the rightmost
+40,tube_wrong_slot,10.23,gripper release; tube in a slot other than the rightmost
+41,tube_wrong_slot,18.23,gripper release; tube in a slot other than the rightmost
+42,tube_wrong_slot,10.13,gripper release; tube in a slot other than the rightmost
+43,tube_wrong_slot,11.1,gripper release; tube in a slot other than the rightmost
+44,tube_wrong_slot,9.27,gripper release; tube in a slot other than the rightmost
+38,person_in_cell,16.5,hand visible ~16.5-17.0 s (top camera)
