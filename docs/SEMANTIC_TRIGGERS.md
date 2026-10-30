@@ -425,9 +425,13 @@ Implemented so far, mapped to the v2 plan:
 | Phase 0: compressed ingest | Not yet (buffer `.../compressed` topics instead) |
 | Phase 1: `PinRange` / `ReleasePin`, TTL, pin budget | Done |
 | Phase 1: warm tier on disk | Not yet |
-| Phase 2: watcher, prompt builder, client, validation, cooldowns | Done, plus a fake VLM and a no-GPU demo |
+| Phase 2: watcher, prompt builder, client, validation, cooldowns | Done, plus a fake VLM, a no-GPU demo and `quickstart` (configs generated from your topics) |
 | Phase 2: latency benchmark | Done: `vlm bench` and `deploy/vllm/check.sh`; Qwen3-VL-4B FP8 on an RTX 4070 Ti SUPER answers in 0.23 s (warm p50) |
 | Phase 3: scorer contract, conformal calibration, effort scorer | Done; frame-difference scorer and random baseline clips not yet |
 | Phase 4: review loop, precision per label | Done as a CLI (no web UI yet) |
-| Evaluation metrics (recall, precision, lag, pre-event coverage) | `review eval`; measured on the demo (recall 1.0, lag p50 1.37 s); a labelled real-robot dataset is still to record |
+| Evaluation metrics (recall, precision, lag, pre-event coverage) | `review eval`, including `noticed`, `recall_near` and `precision_near` (scored at the frame each trigger pointed at) |
+| Evaluation on real robot data | Done on 45 replayed SO-101 policy rollouts: 44/46 events noticed, 42/46 named correctly, 32 % precision ([results](RESULTS_SO101.md)); a live-robot run is next |
+| Replaying LeRobot datasets | Done: [`lerobot-rewind`](../tools/lerobot-rewind/) writes any v2.1/v3.0 dataset as a ROS 2 MCAP session |
+| LeRobot live bridge (cameras and joints from inside LeRobot) | Not yet |
+| Clearing the watcher's window at episode resets | Not yet: most replay false alarms come from episode cuts |
 | Phase 4: distillation, LeRobot exporter | Not yet |
